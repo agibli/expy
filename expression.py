@@ -7,9 +7,8 @@ class Field(object):
 
     _next_sort_order = 0
 
-    def __init__(self, type=None, name=None, display_name=None, default=None):
+    def __init__(self, type=None, display_name=None, default=None):
         self.type = type
-        self.name = name
         self.display_name = display_name
         self.default = default
         self._sort_order = Field._next_sort_order
@@ -19,6 +18,19 @@ class Field(object):
         return self.type(value) if self.type else value
 
 
+class FieldGetter(object):
+
+    def __init__(self, index):
+        self.index = index
+
+    def __get__(self, obj, cls=None):
+        if obj is not None:
+            return obj._values[self.index]
+        if cls is not None:
+            return cls._fields[self.index]
+        return self
+
+
 class ExpressionMeta(type):
 
     def __new__(cls, name, bases, attrs):
@@ -26,14 +38,17 @@ class ExpressionMeta(type):
         for base in bases:
             if isinstance(base, ExpressionMeta):
                 fields.extend(base._fields)
-        unsorted_fields = []
+        new_fields = []
         for k, v in attrs.items():
             if isinstance(v, Field):
-                v.name = v.name or k
+                v.name = k
                 v.display_name = v.display_name or k
-                unsorted_fields.append(v)
-        fields.extend(sorted(unsorted_fields, key=lambda f: f._sort_order))
-        attrs["_fields"] = fields
+                new_fields.append(v)
+        new_fields.sort(key=lambda f: f._sort_order)
+        fields.extend(new_fields)
+        for i, f in enumerate(fields):
+            attrs[f.name] = FieldGetter(i)
+        attrs["_fields"] = tuple(fields)
         attrs["__slots__"] = ("_values",)
         attrs.setdefault("__isabstractexpression__", False)
         attrs.setdefault("__new_expression__", None)
