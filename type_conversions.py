@@ -46,17 +46,20 @@ class TypeConversions(object):
         except KeyError:
             path = None
             self._path_cache[(to_type, from_type)] = None
-            if to_type in from_type.mro():
-                path = ()
-            else:
-                conversions = self._conversions.get(from_type, {})
-                for mid_type, func in conversions.items():
-                    try:
-                        rest = self._conversion_path(to_type, mid_type)
-                        if path is None or len(rest) < len(path) - 1:
-                            path = (func,) + rest
-                    except TypeError:
-                        pass
+            for base in from_type.mro():
+                if path is not None:
+                    break
+                if to_type == base:
+                    path = ()
+                else:
+                    conversions = self._conversions.get(base, {})
+                    for mid_type, func in conversions.items():
+                        try:
+                            rest = self._conversion_path(to_type, mid_type)
+                            if path is None or len(rest) < len(path) - 1:
+                                path = (func,) + rest
+                        except TypeError:
+                            pass
             self._path_cache[(to_type, from_type)] = path
         if path is None:
             raise TypeError("Unable to convert type")
