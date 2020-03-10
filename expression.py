@@ -7,7 +7,7 @@ class Field(object):
 
     _next_sort_order = 0
 
-    def __init__(self, type=None, display_name=None, default=None):
+    def __init__(self, type=object, display_name=None, default=None):
         self.type = type
         self.display_name = display_name
         self.default = default
@@ -15,7 +15,7 @@ class Field(object):
         Field._next_sort_order += 1
 
     def construct(self, value):
-        return self.type(value) if self.type else value
+        return type_conversions.convert(self.type, value)
 
 
 class FieldGetter(object):
@@ -128,7 +128,11 @@ def binary_expression(name, result_type, left_type=None, right_type=None):
     return type(result_type)(name, (result_type,), class_namespace)
 
 
-def constant_expression(name, result_type, constant_type):
-    subclass = unary_expression(name, result_type, constant_type)
-    type_conversions.register_conversion(subclass, constant_type)
-    return subclass
+def cast_expression(name, result_type, from_type):
+    class_namespace = {
+        "value": Field(from_type),
+    }
+    cls = type(result_type)(name, (result_type,), class_namespace)
+    type_conversions.register_conversion(cls, from_type)
+    type_conversions.register_conversion(from_type, cls, lambda c: c.value)
+    return cls
