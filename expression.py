@@ -1,3 +1,5 @@
+import sys
+
 from six import with_metaclass
 
 from . import type_conversions
@@ -107,13 +109,25 @@ class Expression(with_metaclass(ExpressionMeta)):
 expr = Expression
 
 
+def _expression_type(name, base, attrs, module=None, depth=2):
+    result = type(base)(name, (base,), attrs)
+    if module is None:
+        try:
+            module = sys._getframe(depth).f_globals.get('__name__', '__main__')
+        except (AttributeError, ValueError):
+            pass
+    if module is not None:
+        result.__module__ = module
+    return result
+
+
 def unary_expression(name, result_type, operand_type=None):
     if operand_type is None:
         operand_type = result_type
     class_namespace = {
         "operand": Field(operand_type),
     }
-    return type(result_type)(name, (result_type,), class_namespace)
+    return _expression_type(name, result_type, class_namespace)
 
 
 def binary_expression(name, result_type, left_type=None, right_type=None):
@@ -125,14 +139,14 @@ def binary_expression(name, result_type, left_type=None, right_type=None):
         "loperand": Field(left_type),
         "roperand": Field(right_type),
     }
-    return type(result_type)(name, (result_type,), class_namespace)
+    return _expression_type(name, result_type, class_namespace)
 
 
 def cast_expression(name, result_type, from_type):
     class_namespace = {
         "value": Field(from_type),
     }
-    cls = type(result_type)(name, (result_type,), class_namespace)
-    type_conversions.register_conversion(cls, from_type)
-    type_conversions.register_conversion(from_type, cls, lambda c: c.value)
-    return cls
+    result = _expression_type(name, result_type, class_namespace)
+    type_conversions.register_conversion(result, from_type)
+    type_conversions.register_conversion(from_type, result, lambda c: c.value)
+    return result
