@@ -26,7 +26,13 @@ class TestExpression(unittest.TestCase):
             value = Field(int)
         class B(Expression):
             value = Field(int)
-        test_set = set([A(0)])
+        class C(Expression):
+            a = Field(A)
+            b = Field(B)
+        c = C(A(1), B(0))
+        test_set = set([A(0), c])
         self.assertIn(A(0), test_set)
+        self.assertIn(C(A(1), B(0)), test_set)
+        self.assertIn(c, test_set)
         self.assertNotIn(A(1), test_set)
         self.assertNotIn(B(0), test_set)
