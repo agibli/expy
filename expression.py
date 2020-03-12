@@ -51,7 +51,7 @@ class ExpressionMeta(type):
         for i, f in enumerate(fields):
             attrs[f.name] = FieldGetter(i)
         attrs["_fields"] = tuple(fields)
-        attrs["__slots__"] = ("_values",)
+        attrs["__slots__"] = ("_values", "_hash")
         attrs.setdefault("__isabstractexpression__", False)
         attrs.setdefault("__new_expression__", None)
         return type.__new__(cls, name, bases, attrs)
@@ -87,15 +87,20 @@ class Expression(with_metaclass(ExpressionMeta)):
                 raise TypeError("Unexpected positional argument")
             args = tuple(f.construct(arg) for f, arg in zip(self._fields, args))
             self._values = args
+            self._hash = None
 
     def __eq__(self, other):
+        if id(self) == id(other):
+            return True
         return type(self) == type(other) and self._values == other._values
 
     def __ne__(self, other):
-        return type(self) != type(other) or self._values != other._values
+        return not (self == other)
 
     def __hash__(self):
-        return hash((type(self),) + self._values)
+        if self._hash is None:
+            self._hash = hash((type(self),) + self._values)
+        return self._hash
 
     def __getnewargs__(self):
         return self._values
