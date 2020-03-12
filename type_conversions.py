@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, deque
 
 
 class TypeConversions(object):
@@ -21,7 +21,7 @@ class TypeConversions(object):
 
     def convert(self, to_type, from_value):
         result = from_value
-        for func in self._conversion_path(to_type, type(from_value)):
+        for func in self._find_conversion(to_type, type(from_value)):
             result = func(result)
         return result
 
@@ -32,37 +32,52 @@ class TypeConversions(object):
 
     def is_convertible(self, to_type, from_type):
         try:
-            self._conversion_path(to_type, from_type)
+            self._find_conversion(to_type, from_type)
         except TypeError:
             return False
         else:
             return True
 
-    def _conversion_path(self, to_type, from_type):
+    def _find_conversion(self, to_type, from_type):
         if to_type == from_type:
             return ()
         try:
             path = self._path_cache[(to_type, from_type)]
         except KeyError:
-            path = None
-            self._path_cache[(to_type, from_type)] = None
-            for base in from_type.mro():
-                if path is not None:
+            prev = {from_type: (None, None)}
+            q = deque([from_type])
+            tip = to_type
+            while q:
+                current = q.popleft()
+                bases = current.mro()
+                # If current type can be implicitly upcast to the destination,
+                # we are done. Upcasting is not part of the conversion sequence,
+                # just tweak the destination to the subclass we've arrived at.
+                if to_type in bases:
+                    tip = current
                     break
-                if to_type == base:
-                    path = ()
-                else:
+                # Explore conversions from any base class of the current type.
+                # Conceptually, this introduces 0-length edges from the current
+                # type to any of its bases.
+                for base in bases:
                     conversions = self._conversions.get(base, {})
-                    for mid_type, func in conversions.items():
-                        try:
-                            rest = self._conversion_path(to_type, mid_type)
-                            if path is None or len(rest) < len(path) - 1:
-                                path = (func,) + rest
-                        except TypeError:
-                            pass
+                    for neighbor, func in conversions.items():
+                        if neighbor not in prev:
+                            q.append(neighbor)
+                            prev[neighbor] = (current, func)
+            if tip in prev:
+                reverse_path = []
+                while tip is not None:
+                    tip, func = prev[tip]
+                    if func is not None:
+                        reverse_path.append(func)
+                path = tuple(reversed(reverse_path))
+            else:
+                # Destination type is unreachable
+                path = None
             self._path_cache[(to_type, from_type)] = path
         if path is None:
-            raise TypeError("Unable to convert type")
+            raise TypeError("Cannot convert type")
         return path
 
 
