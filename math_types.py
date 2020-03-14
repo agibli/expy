@@ -98,10 +98,10 @@ class Integer(Expression):
     def __rpow__(self, other):
         expr(other) ** self
 
-    def __eq__(self, other):
+    def eq(self, other):
         return IntegerEquals(self, other)
 
-    def __ne__(self, other):
+    def ne(self, other):
         return IntegerNotEquals(self, other)
 
     def __gt__(self, other):
@@ -173,10 +173,10 @@ class Scalar(Expression):
     def __rpow__(self, other):
         expr(other) ** self
 
-    def __eq__(self, other):
+    def eq(self, other):
         return ScalarEquals(self, other)
 
-    def __ne__(self, other):
+    def ne(self, other):
         return ScalarNotEquals(self, other)
 
     def __gt__(self, other):
@@ -197,6 +197,7 @@ ScalarAdd = binary_expression("ScalarAdd", Scalar)
 ScalarSubtract = binary_expression("ScalarSubtract", Scalar)
 ScalarMultiply = binary_expression("ScalarMultiply", Scalar)
 ScalarDivide = binary_expression("ScalarDivide", Scalar)
+ScalarPower = binary_expression("ScalarPower", Scalar)
 ScalarEquals = binary_expression("ScalarEquals", Boolean, Scalar)
 ScalarNotEquals = binary_expression("ScalarNotEquals", Boolean, Scalar)
 ScalarGreaterThan = binary_expression("ScalarGreaterThan", Boolean, Scalar)
