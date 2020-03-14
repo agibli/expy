@@ -35,7 +35,6 @@ class Builder(BuilderBase):
     def __init__(self):
         super(Builder, self).__init__()
         self._handlers = {}
-        self._default_handler = None
 
     def register_handler(self, expression_type, handler, propagate=True):
         self._handlers[expression_type] = self._HandlerInfo(handler, propagate)
@@ -43,15 +42,6 @@ class Builder(BuilderBase):
     def handler(self, expression_type, propagate=True):
         def decorator(func):
             self.register_handler(expression_type, func, propagate)
-            return func
-        return decorator
-
-    def set_default_handler(self, handler, propagate=True):
-        self._default_handler = self._HandlerInfo(handler, propagate)
-
-    def default_handler(self, propagate=True):
-        def decorator(func):
-            self.set_default_handler(func, propagate)
             return func
         return decorator
 
@@ -63,11 +53,9 @@ class Builder(BuilderBase):
                 return self._handlers[base]
             except KeyError:
                 continue
-        if self._default_handler is None:
-            raise NotImplementedError(
-                "Unsupported expression: {}".format(expression_type.__name__)
-            )
-        return self._default_handler
+        raise NotImplementedError(
+            "Unsupported expression: {}".format(expression_type.__name__)
+        )
 
     def _build(self, context, expression):
         seen = set()
