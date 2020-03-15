@@ -75,3 +75,31 @@ class TestTypeConversions(unittest.TestCase):
         conv.register_conversion(A, D)
         conv.register_conversion(D, E)
         self.assertEqual(conv.convert(A, E()), A(D(E())))
+
+    def test_type_hook(self):
+        Base = test_class("Base")
+        class A(Base): pass
+        class B(Base): pass
+        class C(Base): pass
+        class ALike(object): pass
+        class BLike(object): pass
+        class CLike(object): pass
+        def type_hook(value):
+            return {"A": ALike, "B": BLike, "C": CLike}[value.upper()]
+        conv = TypeConversions()
+        conv.register_conversion(A, ALike)
+        conv.register_conversion(B, BLike)
+        conv.register_conversion(C, CLike)
+        conv.register_type_hook(str, type_hook)
+        self.assertEqual(conv.convert(A, "a"), A("a"))
+        self.assertRaises(TypeError, lambda: conv.convert(B, "a"))
+        self.assertRaises(TypeError, lambda: conv.convert(C, "a"))
+        self.assertEqual(conv.convert(B, "b"), B("b"))
+        self.assertRaises(TypeError, lambda: conv.convert(A, "b"))
+        self.assertRaises(TypeError, lambda: conv.convert(C, "b"))
+        self.assertEqual(conv.convert(C, "c"), C("c"))
+        self.assertRaises(TypeError, lambda: conv.convert(A, "c"))
+        self.assertRaises(TypeError, lambda: conv.convert(B, "c"))
+        self.assertEqual(conv.convert(Base, "a"), A("a"))
+        self.assertEqual(conv.convert(Base, "b"), B("b"))
+        self.assertEqual(conv.convert(Base, "c"), C("c"))

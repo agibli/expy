@@ -6,6 +6,10 @@ class TypeConversions(object):
     def __init__(self):
         self._conversions = OrderedDict()
         self._path_cache = {}
+        self._type_hooks = {}
+
+    def register_type_hook(self, hooked_type, func):
+        self._type_hooks[hooked_type] = func
 
     def register_conversion(self, to_type, from_type, func=None):
         if func is None:
@@ -21,7 +25,7 @@ class TypeConversions(object):
 
     def convert(self, to_type, from_value):
         result = from_value
-        for func in self._find_conversion(to_type, type(from_value)):
+        for func in self._find_conversion(to_type, self._typeof(from_value)):
             result = func(result)
         return result
 
@@ -37,6 +41,15 @@ class TypeConversions(object):
             return False
         else:
             return True
+
+    def _typeof(self, value):
+        result = type(value)
+        for base in result.mro():
+            try:
+                return self._type_hooks[base](value)
+            except KeyError:
+                continue
+        return result
 
     def _find_conversion(self, to_type, from_type):
         if to_type == from_type:
@@ -82,6 +95,7 @@ class TypeConversions(object):
 
 
 _instance = TypeConversions()
+register_type_hook = _instance.register_type_hook
 register_conversion = _instance.register_conversion
 conversion = _instance.conversion
 convert = _instance.convert
