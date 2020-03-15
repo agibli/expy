@@ -111,7 +111,8 @@ class Expression(with_metaclass(ExpressionMeta)):
         )
 
 
-expr = Expression
+def expr(arg, type=Expression):
+    return type_conversions.convert(type, arg)
 
 
 def _expression_type(name, base, attrs, module=None, depth=2):
