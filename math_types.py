@@ -98,10 +98,7 @@ class Integer(Expression):
         return expr(other) / self
 
     def __pow__(self, other):
-        other = expr(other)
-        if isinstance(other, Scalar):
-            return ScalarPower(self, other)
-        return IntegerPower(self, other)
+        return ScalarPower(self, other)
 
     def __rpow__(self, other):
         expr(other) ** self
@@ -130,7 +127,6 @@ IntegerAdd = binary_expression("IntegerAdd", Integer)
 IntegerSubtract = binary_expression("IntegerSubtract", Integer)
 IntegerMultiply = binary_expression("IntegerMultiply", Integer)
 IntegerDivide = binary_expression("IntegerDivide", Integer)
-IntegerPower = binary_expression("IntegerPower", Integer)
 IntegerEquals = binary_expression("IntegerEquals", Boolean, Integer)
 IntegerNotEquals = binary_expression("IntegerNotEquals", Boolean, Integer)
 IntegerGreaterThan = binary_expression("IntegerGreaterThan", Boolean, Integer)
