@@ -317,23 +317,15 @@ constant_folding.register_handler(
 )
 
 
-def _handle_vector_component(index, context, expression):
-    vector = context.get(expression.operand)
+@constant_folding.handler(VectorComponent)
+def _handle_vector_component(context, expression):
+    vector = context.get(expression.value)
+    index = expression.index
     if isinstance(vector, VectorFromScalar):
         return vector._values[index]
     if isinstance(vector, VectorConstant):
         return ScalarConstant(vector._values[index])
-    return type(expression)(vector)
-
-constant_folding.register_handler(
-    VectorGetX, functools.partial(_handle_vector_component, 0)
-)
-constant_folding.register_handler(
-    VectorGetY, functools.partial(_handle_vector_component, 1)
-)
-constant_folding.register_handler(
-    VectorGetZ, functools.partial(_handle_vector_component, 2)
-)
+    return VectorComponent(vector, index)
 
 
 @constant_folding.handler(VectorFromScalar)

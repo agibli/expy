@@ -246,15 +246,15 @@ class Vector(Expression):
 
     @property
     def x(self):
-        return VectorGetX(self)
+        return VectorComponent(self, 0)
 
     @property
     def y(self):
-        return VectorGetY(self)
+        return VectorComponent(self, 1)
 
     @property
     def z(self):
-        return VectorGetZ(self)
+        return VectorComponent(self, 2)
 
     def dot(self, other):
         return VectorDotProduct(self, other)
@@ -269,6 +269,11 @@ class Vector(Expression):
         return VectorNormalize(self)
 
 
+class VectorComponent(Scalar):
+    value = Field(Vector)
+    index = Field(int)
+
+
 class VectorConstant(Vector):
     xvalue = Field(float)
     yvalue = Field(float)
@@ -281,9 +286,6 @@ class VectorFromScalar(Vector):
     zvalue = Field(Scalar)
 
 
-VectorGetX = unary_expression("VectorGetX", Scalar, Vector)
-VectorGetY = unary_expression("VectorGetY", Scalar, Vector)
-VectorGetZ = unary_expression("VectorGetZ", Scalar, Vector)
 VectorAdd = binary_expression("VectorAdd", Vector)
 VectorSubtract = binary_expression("VectorSubtract", Vector)
 VectorMultiply = binary_expression("VectorMultiply", Vector, Vector, Scalar)
