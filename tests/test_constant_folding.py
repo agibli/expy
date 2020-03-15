@@ -1,5 +1,6 @@
 import unittest
 
+from expy import type_conversions
 from expy.math_types import *
 from expy.constant_folding import constant_folding
 
@@ -168,7 +169,7 @@ class TestConstantFolding(unittest.TestCase):
         class Var(base):
             tag = Field(str)
         a = Var('a')
-        T = base
+        T = type_conversions.constructor(base)
         C = constant_type
         B = BooleanConstant
         ctx = constant_folding.context()

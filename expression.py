@@ -53,24 +53,16 @@ class ExpressionMeta(type):
         attrs["_fields"] = tuple(fields)
         attrs["__slots__"] = ("_values", "_hash")
         attrs.setdefault("__isabstractexpression__", False)
-        attrs.setdefault("__new_expression__", None)
         return type.__new__(cls, name, bases, attrs)
 
 
 def abstract_expression(cls):
     cls.__isabstractexpression__ = True
-    if not getattr(cls, "__new_expression__", None):
-        cls.__new_expression__ = type_conversions.constructor(cls)
     return cls
 
 
 @abstract_expression
 class Expression(with_metaclass(ExpressionMeta)):
-
-    def __new__(cls, *args, **kwargs):
-        if cls.__new_expression__:
-            return cls.__new_expression__(*args, **kwargs)
-        return object.__new__(cls)
 
     def __init__(self, *args, **kwargs):
         if type(self).__isabstractexpression__:
