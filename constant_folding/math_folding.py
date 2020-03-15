@@ -512,3 +512,281 @@ def _handle_vector_length(context, expression):
     elif isinstance(vector, VectorNormalize):
         return ScalarConstant(1.0)
     return VectorLength(vector)
+
+
+def _is_zero_matrix(matrix):
+    return matrix == MatrixConstant(
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    )
+
+
+def _is_identity_matrix(matrix):
+    return matrix == MatrixConstant(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1,
+    )
+
+
+@constant_folding.handler(MatrixFromScalar)
+def _handle_scalar_to_matrix(context, expression):
+    scalars = [context.get(a) for a in expression._values]
+    if all(isinstance(s, ScalarConstant) for s in scalars):
+        return MatrixConstant(*(s.value for s in scalars))
+    return MatrixFromScalar(*scalars)
+
+
+@constant_folding.handler(MatrixComponent)
+def _handle_matrix_component(context, expression):
+    value = context.get(expression.value)
+    i = expression.row
+    j = expression.column
+    if isinstance(value, MatrixConstant):
+        return ScalarConstant(getattr(value, "a{}{}".format(i,j)))
+    elif isinstance(value, MatrixFromScalar):
+        return getattr(value, "a{}{}".format(i,j))
+    return MatrixComponent(value, i, j)
+
+
+@constant_folding.handler(MatrixAdd)
+def _handle_matrix_add(context, expression):
+    left = context.get(expression.loperand)
+    right = context.get(expression.roperand)
+    is_left_constant = isinstance(left, MatrixConstant)
+    is_right_constant = isinstance(right, MatrixConstant)
+    if is_left_constant and is_right_constant:
+        return MatrixConstant(
+            *(a + b for a,b in zip(left._values, right._values))
+        )
+    if _is_zero_matrix(left):
+        return right
+    if _is_zero_matrix(right):
+        return left
+    return MatrixAdd(left, right)
+
+
+@constant_folding.handler(MatrixSubtract)
+def _handle_matrix_subtract(context, expression):
+    left = context.get(expression.loperand)
+    right = context.get(expression.roperand)
+    is_left_constant = isinstance(left, MatrixConstant)
+    is_right_constant = isinstance(right, MatrixConstant)
+    if is_left_constant and is_right_constant:
+        return MatrixConstant(
+            *(a - b for a,b in zip(left._values, right._values))
+        )
+    if _is_zero_matrix(right):
+        return left
+    elif left == right:
+        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+    return MatrixSubtract(left, right)
+
+
+@constant_folding.handler(MatrixScalarMultiply)
+def _handle_matrix_scalar_multiply(context, operator):
+    matrix = context.get(operator.loperand)
+    scalar = context.get(operator.roperand)
+    is_matrix_constant = isinstance(matrix, MatrixConstant)
+    is_scalar_constant = isinstance(scalar, ScalarConstant)
+    if is_scalar_constant and is_matrix_constant:
+        s = scalar.value
+        return MatrixConstant(*(a * s for a in matrix._values))
+    elif is_scalar_constant and scalar.value == 1:
+        return matrix
+    elif (
+        (is_scalar_constant and scalar.value == 0)
+        or (is_matrix_constant and _is_zero_matrix(matrix))
+    ):
+        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+    return MatrixScalarMultiply(matrix, scalar)
+
+
+@constant_folding.handler(MatrixDivide)
+def _handle_matrix_divide(context, operator):
+    matrix = context.get(operator.loperand)
+    scalar = context.get(operator.roperand)
+    is_matrix_constant = isinstance(matrix, MatrixConstant)
+    is_scalar_constant = isinstance(scalar, ScalarConstant)
+    if is_scalar_constant and is_matrix_constant:
+        s = scalar.value
+        return MatrixConstant(*(a / s for a in matrix._values))
+    elif is_scalar_constant and scalar.value == 1:
+        return matrix
+    elif is_scalar_constant and scalar.value == 0:
+        raise ZeroDivisionError
+    elif is_matrix_constant and _is_zero_matrix(matrix):
+        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+    return MatrixDivide(matrix, scalar)
+
+
+@constant_folding.handler(MatrixVectorMultiply)
+def _handle_matrix_vector_multiply(context, expression):
+    matrix = context.get(expression.loperand)
+    vector = context.get(expression.roperand)
+    is_matrix_constant = isinstance(matrix, MatrixConstant)
+    is_vector_constant = isinstance(vector, VectorConstant)
+    if is_vector_constant and is_matrix_constant:
+        x, y, z = vector._values
+        return VectorConstant(
+            x*matrix.a00 + y*matrix.a01 + z*matrix.a02,
+            x*matrix.a10 + y*matrix.a11 + z*matrix.a12,
+            x*matrix.a20 + y*matrix.a21 + z*matrix.a22,
+        )
+    elif _is_zero_vector(vector) or _is_identity_matrix(matrix):
+        return vector
+    elif _is_zero_matrix(matrix):
+        return VectorConstant(0, 0, 0)
+    return VectorMatrixMultiply(vector, matrix)
+
+
+@constant_folding.handler(VectorMatrixMultiply)
+def _handle_vector_matrix_multiply(context, expression):
+    vector = context.get(expression.loperand)
+    matrix = context.get(expression.roperand)
+    is_vector_constant = isinstance(vector, VectorConstant)
+    is_matrix_constant = isinstance(matrix, MatrixConstant)
+    if is_vector_constant and is_matrix_constant:
+        x, y, z = vector._values
+        return VectorConstant(
+            x*matrix.a00 + y*matrix.a10 + z*matrix.a20,
+            x*matrix.a01 + y*matrix.a11 + z*matrix.a21,
+            x*matrix.a02 + y*matrix.a12 + z*matrix.a22,
+        )
+    elif _is_zero_vector(vector) or _is_identity_matrix(matrix):
+        return vector
+    elif _is_zero_matrix(matrix):
+        return VectorConstant(0, 0, 0)
+    return VectorMatrixMultiply(vector, matrix)
+
+
+@constant_folding.handler(MatrixMultiply)
+def _handle_matrix_multiply(context, expression):
+    left = context.get(expression.loperand)
+    right = context.get(expression.roperand)
+    is_left_constant = isinstance(left, MatrixConstant)
+    is_right_constant = isinstance(right, MatrixConstant)
+    if is_left_constant and is_right_constant:
+        m1 = left
+        m2 = right
+        a00 = m1.a00*m2.a00 + m1.a01*m2.a10 + m1.a02*m2.a20 + m1.a03*m2.a30
+        a01 = m1.a00*m2.a01 + m1.a01*m2.a11 + m1.a02*m2.a21 + m1.a03*m2.a31
+        a02 = m1.a00*m2.a02 + m1.a01*m2.a12 + m1.a02*m2.a22 + m1.a03*m2.a32
+        a03 = m1.a00*m2.a03 + m1.a01*m2.a13 + m1.a02*m2.a23 + m1.a03*m2.a33
+        a10 = m1.a10*m2.a00 + m1.a11*m2.a10 + m1.a12*m2.a20 + m1.a13*m2.a30
+        a11 = m1.a10*m2.a01 + m1.a11*m2.a11 + m1.a12*m2.a21 + m1.a13*m2.a31
+        a12 = m1.a10*m2.a02 + m1.a11*m2.a12 + m1.a12*m2.a22 + m1.a13*m2.a32
+        a13 = m1.a10*m2.a03 + m1.a11*m2.a13 + m1.a12*m2.a23 + m1.a13*m2.a33
+        a20 = m1.a20*m2.a00 + m1.a21*m2.a10 + m1.a22*m2.a20 + m1.a23*m2.a30
+        a21 = m1.a20*m2.a01 + m1.a21*m2.a11 + m1.a22*m2.a21 + m1.a23*m2.a31
+        a22 = m1.a20*m2.a02 + m1.a21*m2.a12 + m1.a22*m2.a22 + m1.a23*m2.a32
+        a23 = m1.a20*m2.a03 + m1.a21*m2.a13 + m1.a22*m2.a23 + m1.a23*m2.a33
+        a30 = m1.a30*m2.a00 + m1.a31*m2.a10 + m1.a32*m2.a20 + m1.a33*m2.a30
+        a31 = m1.a30*m2.a01 + m1.a31*m2.a11 + m1.a32*m2.a21 + m1.a33*m2.a31
+        a32 = m1.a30*m2.a02 + m1.a31*m2.a12 + m1.a32*m2.a22 + m1.a33*m2.a32
+        a33 = m1.a30*m2.a03 + m1.a31*m2.a13 + m1.a32*m2.a23 + m1.a33*m2.a33
+        return MatrixConstant(
+            a00, a01, a02, a03,
+            a10, a11, a12, a13,
+            a20, a21, a22, a23,
+            a30, a31, a32, a33,
+        )
+    elif _is_identity_matrix(left):
+        return right
+    elif _is_identity_matrix(right):
+        return left
+    elif _is_zero_matrix(left):
+        return left
+    elif _is_zero_matrix(right):
+        return right
+    elif (
+        (isinstance(left, MatrixInverse) and left.operand == right)
+        or (isinstance(right, MatrixInverse) and right.operand == left)
+    ):
+        return MatrixConstant(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+    return MatrixMultiply(left, right)
+
+
+@constant_folding.handler(MatrixTranspose)
+def _handle_matrix_transpose(context, expression):
+    operand = context.get(expression.operand)
+    if isinstance(operand, MatrixConstant):
+        return MatrixConstant(
+            operand.a00, operand.a10, operand.a20, operand.a30,
+            operand.a01, operand.a11, operand.a21, operand.a31,
+            operand.a02, operand.a12, operand.a22, operand.a32,
+            operand.a03, operand.a13, operand.a23, operand.a33,
+        )
+    if isinstance(operand, MatrixTranspose):
+        return operand.operand
+    return MatrixTranspose(operand)
+
+
+@constant_folding.handler(MatrixInverse)
+def _handle_matrix_inverse(context, expression):
+    operand = context.get(expression.operand)
+    if _is_identity_matrix(operand):
+        return operand
+    elif isinstance(operand, MatrixInverse):
+        return operand.operand
+    elif isinstance(operand, MatrixConstant):
+        m = operand
+        aa = (m.a11 * m.a22 * m.a33 - m.a11 * m.a23 * m.a32 -
+              m.a21 * m.a12 * m.a33 + m.a21 * m.a13 * m.a32 +
+              m.a31 * m.a12 * m.a23 - m.a31 * m.a13 * m.a22)
+        ba = (-m.a10 * m.a22 * m.a33 + m.a10 * m.a23 * m.a32 +
+              m.a20 * m.a12 * m.a33 - m.a20 * m.a13 * m.a32 -
+              m.a30 * m.a12 * m.a23 + m.a30 * m.a13 * m.a22)
+        ca = (m.a10 * m.a21 * m.a33 - m.a10 * m.a23 * m.a31 -
+              m.a20 * m.a11 * m.a33 + m.a20 * m.a13 * m.a31 +
+              m.a30 * m.a11 * m.a23 - m.a30 * m.a13 * m.a21)
+        da = (-m.a10  * m.a21 * m.a32 + m.a10  * m.a22 * m.a31 +
+              m.a20 * m.a11 * m.a32 - m.a20 * m.a12 * m.a31 -
+              m.a30 * m.a11 * m.a22 + m.a30 * m.a12 * m.a21)
+        ab = (-m.a01 * m.a22 * m.a33 + m.a01 * m.a23 * m.a32 +
+              m.a21 * m.a02 * m.a33 - m.a21 * m.a03 * m.a32 -
+              m.a31 * m.a02 * m.a23 + m.a31 * m.a03 * m.a22)
+        bb = (m.a00 * m.a22 * m.a33 - m.a00 * m.a23 * m.a32 -
+              m.a20 * m.a02 * m.a33 + m.a20 * m.a03 * m.a32 +
+              m.a30 * m.a02 * m.a23 - m.a30 * m.a03 * m.a22)
+        cb = (-m.a00  * m.a21 * m.a33 + m.a00 * m.a23 * m.a31 +
+              m.a20 * m.a01 * m.a33 - m.a20 * m.a03 * m.a31 -
+              m.a30 * m.a01 * m.a23 + m.a30 * m.a03 * m.a21)
+        db = (m.a00 * m.a21 * m.a32 - m.a00 * m.a22 * m.a31 -
+              m.a20 * m.a01 * m.a32 + m.a20 * m.a02 * m.a31 +
+              m.a30 * m.a01 * m.a22 - m.a30 * m.a02 * m.a21)
+        ac = (m.a01 * m.a12 * m.a33 - m.a01 * m.a13 * m.a32 -
+              m.a11 * m.a02 * m.a33 + m.a11 * m.a03 * m.a32 +
+              m.a31 * m.a02 * m.a13 - m.a31 * m.a03 * m.a12)
+        bc = (-m.a00 * m.a12 * m.a33 + m.a00 * m.a13 * m.a32 +
+              m.a10 * m.a02 * m.a33 - m.a10 * m.a03 * m.a32 -
+              m.a30 * m.a02 * m.a13 + m.a30 * m.a03 * m.a12)
+        cc = (m.a00 * m.a11 * m.a33 - m.a00 * m.a13 * m.a31 -
+              m.a10 * m.a01 * m.a33 + m.a10 * m.a03 * m.a31 +
+              m.a30 * m.a01 * m.a13 - m.a30 * m.a03 * m.a11)
+        dc = (-m.a00 * m.a11 * m.a32 + m.a00 * m.a12 * m.a31 +
+              m.a10 * m.a01 * m.a32 - m.a10 * m.a02 * m.a31 -
+              m.a30 * m.a01 * m.a12 + m.a30 * m.a02 * m.a11)
+        ad = (-m.a01 * m.a12 * m.a23 + m.a01 * m.a13 * m.a22 +
+              m.a11 * m.a02 * m.a23 - m.a11 * m.a03 * m.a22 -
+              m.a21 * m.a02 * m.a13 + m.a21 * m.a03 * m.a12)
+        bd = (m.a00 * m.a12 * m.a23 - m.a00 * m.a13 * m.a22 -
+              m.a10 * m.a02 * m.a23 + m.a10 * m.a03 * m.a22 +
+              m.a20 * m.a02 * m.a13 - m.a20 * m.a03 * m.a12)
+        cd = (-m.a00 * m.a11 * m.a23 + m.a00 * m.a13 * m.a21 +
+              m.a10 * m.a01 * m.a23 - m.a10 * m.a03 * m.a21 -
+              m.a20 * m.a01 * m.a13 + m.a20 * m.a03 * m.a11)
+        dd = (m.a00 * m.a11 * m.a22 - m.a00 * m.a12 * m.a21 - 
+              m.a10 * m.a01 * m.a22 + m.a10 * m.a02 * m.a21 + 
+              m.a20 * m.a01 * m.a12 - m.a20 * m.a02 * m.a11)
+        det = 1.0 / (m.a00 * aa + m.a01 * ba + m.a02 * ca + m.a03 * da)
+        return MatrixConstant(
+            aa * det, ab * det, ac * det, ad * det,
+            ba * det, bb * det, bc * det, bd * det,
+            ca * det, cb * det, cc * det, cd * det,
+            da * det, db * det, dc * det, dd * det,
+        )
+    return MatrixInverse(operand)
