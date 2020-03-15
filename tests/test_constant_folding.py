@@ -13,7 +13,7 @@ ScalarVar = _var_type("ScalarVar", Scalar)
 VectorVar = _var_type("VectorVar", Vector)
 
 
-class TestExpression(unittest.TestCase):
+class TestConstantFolding(unittest.TestCase):
 
     def _assert_scalar_equal(self, const, value):
         self.assertIsInstance(const, ScalarConstant)
