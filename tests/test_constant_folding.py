@@ -12,6 +12,7 @@ BooleanVar = _var_type("BooleanVar", Boolean)
 IntegerVar = _var_type("IntegerVar", Integer)
 ScalarVar = _var_type("ScalarVar", Scalar)
 VectorVar = _var_type("VectorVar", Vector)
+MatrixVar = _var_type("MatrixVar", Matrix)
 
 
 class TestConstantFolding(unittest.TestCase):
@@ -25,6 +26,11 @@ class TestConstantFolding(unittest.TestCase):
         self.assertAlmostEqual(const.xvalue, value.xvalue)
         self.assertAlmostEqual(const.yvalue, value.yvalue)
         self.assertAlmostEqual(const.zvalue, value.zvalue)
+
+    def _assert_matrix_equal(self, const, value):
+        self.assertIsInstance(const, MatrixConstant)
+        for a, b in zip(const._values, value._values):
+            self.assertAlmostEqual(a, b)
 
     def test_typecast_identities(self):
         S = ScalarConstant
@@ -297,6 +303,147 @@ class TestConstantFolding(unittest.TestCase):
         # |a/|a|| = 1
         self.assertEqual(ctx.get(a.normalized().length()), S(1.0))
         self.assertEqual(ctx.get(a.normalized().normalized()), a.normalized())
+
+    def test_matrix_operations(self):
+        S = ScalarConstant
+        V = VectorConstant
+        M = MatrixConstant
+        zero = M(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+        m1 = M(
+            -1.47562898915, 7.73892261048, -0.636700193883, -7.27511191565,
+            -9.13895323721, 7.73574129521, 0.973591335962, 3.01430692063,
+            -4.91771153978, 5.60402612802, 2.96411112361, -3.85652185424,
+            -6.42222719512, 3.00731946438, 3.73596052196, 7.00422507133,
+        )
+        m2 = M(
+            -7.71598902963, -5.24995175379, 3.50941987372, 6.68985402811,
+            9.78184029315, 1.03546950178, 3.23483519687, -8.26166456441,
+            -9.12516377997, -6.51115202518, 9.42557887812, -6.06548190021,
+            -0.988702568204, 3.89587352648, -2.11375664001, 7.68922813683,
+        )
+        v = V(4.4925060373, 3.54494750813, 2.96842936979)
+        s = S(7.215897398019421)
+
+        ctx = constant_folding.context()
+        self._assert_matrix_equal(ctx.get(m1 * s), M(
+            -10.6479873832, 55.8432715285, -4.59436327236, -52.4964611424,
+            -65.945748885, 55.8203154839, 7.0253351879, 21.7509294654,
+            -35.4857019041, 40.4380775556, 21.3887217443, -27.8282660134,
+            -46.3421325068, 21.700508698, 26.9583078095, 50.5417694673,
+        ))
+        self._assert_matrix_equal(ctx.get(s * m1), M(
+            -10.6479873832, 55.8432715285, -4.59436327236, -52.4964611424,
+            -65.945748885, 55.8203154839, 7.0253351879, 21.7509294654,
+            -35.4857019041, 40.4380775556, 21.3887217443, -27.8282660134,
+            -46.3421325068, 21.700508698, 26.9583078095, 50.5417694673,
+        ))
+        self._assert_vector_equal(ctx.get(m1 * v), V(
+            18.9148027258, -10.7439686488, 6.57188419054,
+        ))
+        self._assert_vector_equal(ctx.get(v * m1), V(
+            -53.6242610146, 78.8251091253, 9.38970523003,
+        ))
+        self._assert_matrix_equal(ctx.get(m1 * m2), M(
+            100.089757492, -8.43686481819, 29.2320857648, -125.886226973,
+            134.32141543, 61.3933450942, -4.24342523643, -107.775969904,
+            69.5276504714, -2.70375307595, 36.959998228, -126.829795156,
+            37.9546063397, 39.7925386241, 7.59825443211, -36.6125435541,
+        ))
+        self._assert_matrix_equal(ctx.get(m1 / s), M(
+            -0.204496947193, 1.07248235162, -0.0882357604, -1.00820611968,
+            -1.26650265838, 1.07204147572, 0.134923112436, 0.417731399765,
+            -0.681510735051, 0.776622202189, 0.410775120558, -0.534447989144,
+            -0.890010880266, 0.416763057801, 0.51774024988, 0.970665834751,
+        ))
+        self.assertRaises(ZeroDivisionError, lambda: ctx.get(m1 / S(0)))
+        self._assert_matrix_equal(ctx.get(m1.transpose()), M(
+            -1.47562898915, -9.13895323721, -4.91771153978, -6.42222719512,
+            7.73892261048, 7.73574129521, 5.60402612802, 3.00731946438,
+            -0.636700193883, 0.973591335962, 2.96411112361, 3.73596052196,
+            -7.27511191565, 3.01430692063, -3.85652185424, 7.00422507133,
+        ))
+        self._assert_matrix_equal(ctx.get(m1.inverse()), M(
+            0.281024696013, -0.235732671287, -0.211321985613, 0.276988369374,
+            0.284247540149, -0.102538645986, -0.19658076917, 0.231131576677,
+            0.0621626854628, -0.248632919398, 0.12759620531, 0.241821751929,
+            0.102472998641, -0.0395018053024, -0.177417344905, 0.168521031032,
+        ))
+        self.assertRaises(ZeroDivisionError, lambda: ctx.get(zero.inverse()))
+
+    def test_matrix_identities(self):
+        S = ScalarConstant
+        V = VectorConstant
+        M = MatrixConstant
+        S2M = MatrixFromScalar
+
+        a = MatrixVar('a')
+        u = VectorVar('u')
+        k = ScalarVar('k')
+        zero = M(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+        ident = M(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+
+        ctx = constant_folding.context()
+
+        # Composition / component access
+        s2m = S2M(*(
+            ScalarVar("a{}{}".format(i,j)) for i in range(4) for j in range(4)
+        ))
+        for i in range(4):
+            for j in range(4):
+                self.assertEqual(
+                    ctx.get(s2m[i,j]),
+                    getattr(s2m, "a{}{}".format(i,j))
+                )
+
+        # a + (0) = a
+        self.assertEqual(ctx.get(a + zero), a)
+        self.assertEqual(ctx.get(zero + a), a)
+
+        # a - (0) = a
+        self.assertEqual(ctx.get(a - zero), a)
+        self.assertNotEqual(ctx.get(zero - a), a)
+        # a - a = (0)
+        self._assert_matrix_equal(ctx.get(a - a), zero)
+
+        # a * 0 = (0)
+        self._assert_matrix_equal(ctx.get(a * 0), zero)
+        self._assert_matrix_equal(ctx.get(0 * a), zero)
+        # a * 1 = a
+        self.assertEqual(ctx.get(a * 1), a)
+        self.assertEqual(ctx.get(1 * a), a)
+        # (0) * k = (k)
+        self._assert_matrix_equal(ctx.get(zero * k), zero)
+        self._assert_matrix_equal(ctx.get(k * zero), zero)
+
+        # a * (0) = (0)
+        self._assert_matrix_equal(ctx.get(a * zero), zero)
+        self._assert_matrix_equal(ctx.get(zero * a), zero)
+        # a * I = a
+        self.assertEqual(ctx.get(a * ident), a)
+        self.assertEqual(ctx.get(ident * a), a)
+        # a * a^-1 = I
+        self._assert_matrix_equal(ctx.get(a * a.inverse()), ident)
+        self._assert_matrix_equal(ctx.get(a.inverse() * a), ident)
+
+        # a * (0,0,0) = (0,0,0)
+        self._assert_vector_equal(ctx.get(a * V(0,0,0)), V(0,0,0))
+        self._assert_vector_equal(ctx.get(V(0,0,0) * a), V(0,0,0))
+        # (0) * u = (0,0,0)
+        self._assert_vector_equal(ctx.get(zero * u), V(0,0,0))
+        self._assert_vector_equal(ctx.get(u * zero), V(0,0,0))
+        # I * u = u
+        self.assertEqual(ctx.get(ident * u), u)
+        self.assertEqual(ctx.get(u * ident), u)
+
+        # a / 1 = a
+        self.assertEqual(ctx.get(a / 1), a)
+        # (0) / k = (0)
+        self._assert_matrix_equal(ctx.get(zero / k), zero)
+
+        # (a^T)^T = a
+        self.assertEqual(ctx.get(a.transpose().transpose()), a)
+        # (a^-1)^-1 = a
+        self.assertEqual(ctx.get(a.inverse().inverse()), a)
 
     def test_examples(self):
         S = ScalarConstant
