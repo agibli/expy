@@ -86,6 +86,8 @@ class Integer(Expression):
             return ScalarMultiply(self, other)
         if isinstance(other, Vector):
             return VectorMultiply(other, self)
+        elif isinstance(other, Matrix):
+            return MatrixScalarMultiply(other, self)
         return IntegerMultiply(self, other)
 
     def __rmul__(self, other):
@@ -160,6 +162,8 @@ class Scalar(Expression):
         other = expr(other)
         if isinstance(other, Vector):
             return VectorMultiply(other, self)
+        elif isinstance(other, Matrix):
+            return MatrixScalarMultiply(other, self)
         return ScalarMultiply(self, other)
 
     def __rmul__(self, other):
@@ -233,6 +237,9 @@ class Vector(Expression):
         return VectorSubtract(self, other)
 
     def __mul__(self, other):
+        other = expr(other)
+        if isinstance(other, Matrix):
+            return VectorMatrixMultiply(self, other)
         return VectorMultiply(self, other)
 
     def __rmul__(self, other):
@@ -294,3 +301,100 @@ VectorDotProduct = binary_expression("VectorDotProduct", Scalar, Vector)
 VectorCrossProduct = binary_expression("VectorCrossProduct", Vector)
 VectorLength = unary_expression("VectorLength", Scalar, Vector)
 VectorNormalize = unary_expression("VectorNormalize", Vector)
+
+
+@abstract_expression
+class Matrix(Expression):
+
+    def __add__(self, other):
+        return MatrixAdd(self, other)
+
+    def __radd__(self, other):
+        return expr(other) + self
+
+    def __sub__(self, other):
+        return MatrixSubtract(self, other)
+
+    def __rsub__(self, other):
+        return expr(other) - self
+
+    def __mul__(self, other):
+        other = expr(other)
+        if isinstance(other, Matrix):
+            return MatrixMultiply(self, other)
+        elif isinstance(other, (Scalar, Integer)):
+            return MatrixScalarMultiply(self, other)
+        elif isinstance(other, Vector):
+            return MatrixVectorMultiply(self, other)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        return expr(other) * self
+
+    def __truediv__(self, other):
+        return MatrixDivide(self, other)
+
+    def __getitem__(self, ij):
+        i, j = ij
+        return MatrixComponent(self, i, j)
+
+    def inverse(self):
+        return MatrixInverse(self)
+
+    def transpose(self):
+        return MatrixTranspose(self)
+
+
+class MatrixConstant(Matrix):
+    a00 = Field(float, default=1.0)
+    a01 = Field(float, default=0.0)
+    a02 = Field(float, default=0.0)
+    a03 = Field(float, default=0.0)
+    a10 = Field(float, default=0.0)
+    a11 = Field(float, default=1.0)
+    a12 = Field(float, default=0.0)
+    a13 = Field(float, default=0.0)
+    a20 = Field(float, default=0.0)
+    a21 = Field(float, default=0.0)
+    a22 = Field(float, default=1.0)
+    a23 = Field(float, default=0.0)
+    a30 = Field(float, default=0.0)
+    a31 = Field(float, default=0.0)
+    a32 = Field(float, default=0.0)
+    a33 = Field(float, default=1.0)
+
+
+class MatrixFromScalar(Matrix):
+    a00 = Field(Scalar, default=1.0)
+    a01 = Field(Scalar, default=0.0)
+    a02 = Field(Scalar, default=0.0)
+    a03 = Field(Scalar, default=0.0)
+    a10 = Field(Scalar, default=0.0)
+    a11 = Field(Scalar, default=1.0)
+    a12 = Field(Scalar, default=0.0)
+    a13 = Field(Scalar, default=0.0)
+    a20 = Field(Scalar, default=0.0)
+    a21 = Field(Scalar, default=0.0)
+    a22 = Field(Scalar, default=1.0)
+    a23 = Field(Scalar, default=0.0)
+    a30 = Field(Scalar, default=0.0)
+    a31 = Field(Scalar, default=0.0)
+    a32 = Field(Scalar, default=0.0)
+    a33 = Field(Scalar, default=1.0)
+
+
+class MatrixComponent(Scalar):
+    value = Field(Matrix)
+    row = Field(int)
+    column = Field(int)
+
+
+MatrixInverse = unary_expression("MatrixInverse", Matrix)
+MatrixTranspose = unary_expression("MatrixTranspose", Matrix)
+MatrixAdd = binary_expression("MatrixAdd", Matrix)
+MatrixSubtract = binary_expression("MatrixSubtract", Matrix)
+MatrixMultiply = binary_expression("MatrixMultiply", Matrix)
+MatrixScalarMultiply = binary_expression("MatrixScalarMultiply", Matrix, Matrix, Scalar)
+MatrixDivide = binary_expression("MatrixDivide", Matrix, Matrix, Scalar)
+VectorMatrixMultiply = binary_expression("VectorMatrixMultiply", Vector, Vector, Matrix)
+MatrixVectorMultiply = binary_expression("MatrixVectorMultiply", Vector, Matrix, Vector)
