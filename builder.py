@@ -12,10 +12,11 @@ class BuilderBase(object):
 
         def get(self, expression):
             try:
-                result = self._cache[expression]
+                return self._cache[expression]
             except KeyError:
-                result = self.builder._build(self, expression)
-                self.put(expression, result)
+                pass
+            result = self.builder._build(self, expression)
+            self.put(expression, result)
             return result
 
         def put(self, expression, result):
