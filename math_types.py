@@ -38,11 +38,19 @@ class Boolean(Expression):
     def __ror__(self, other):
         return BooleanOr(other, self)
 
+    def eq(self, other):
+        return BooleanEquals(other, self)
+
+    def ne(self, other):
+        return BooleanNotEquals(other, self)
+
 
 BooleanConstant = cast_expression("BooleanConstant", Boolean, bool)
 BooleanInverse = unary_expression("BooleanInverse", Boolean)
 BooleanAnd = binary_expression("BooleanAnd", Boolean)
 BooleanOr = binary_expression("BooleanOr", Boolean)
+BooleanEquals = binary_expression("BooleanEquals", Boolean)
+BooleanNotEquals = binary_expression("BooleanNotEquals", Boolean)
 
 
 @abstract_expression
