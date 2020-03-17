@@ -364,6 +364,10 @@ class MatrixConstant(Matrix):
     a33 = Field(float, default=1.0)
 
 
+Matrix.ZERO = MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+Matrix.IDENTITY = MatrixConstant(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+
+
 class MatrixFromScalar(Matrix):
     a00 = Field(Scalar, default=1.0)
     a01 = Field(Scalar, default=0.0)
