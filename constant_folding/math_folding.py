@@ -35,14 +35,12 @@ constant_folding.register_handler(
 @constant_folding.handler(BooleanAnd, propagate=False)
 def _handle_boolean_and(context, expression):
     left = context.get(expression.loperand)
-    is_left_constant = isinstance(left, BooleanConstant)
-    if is_left_constant and not left.value:
+    if left == BooleanConstant(False):
         return BooleanConstant(False)
     right = context.get(expression.roperand)
-    is_right_constant = isinstance(right, BooleanConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, BooleanConstant) and isinstance(right, BooleanConstant):
         return BooleanConstant(left.value and right.value)
-    elif is_right_constant and not right.value:
+    elif right == BooleanConstant(False):
         return BooleanConstant(False)
     return BooleanAnd(left, right)
 
@@ -50,14 +48,12 @@ def _handle_boolean_and(context, expression):
 @constant_folding.handler(BooleanOr, propagate=False)
 def _handle_boolean_or(context, expression):
     left = context.get(expression.loperand)
-    is_left_constant = isinstance(left, BooleanConstant)
-    if is_left_constant and left.value:
+    if left == BooleanConstant(True):
         return BooleanConstant(True)
     right = context.get(expression.roperand)
-    is_right_constant = isinstance(right, BooleanConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, BooleanConstant) and isinstance(right, BooleanConstant):
         return BooleanConstant(left.value or right.value)
-    elif is_right_constant and right.value:
+    elif right == BooleanConstant(True):
         return BooleanConstant(True)
     return BooleanOr(left, right)
 
@@ -125,14 +121,12 @@ def _handle_boolean_from_integer(context, expression):
 def _handle_add(constant_type, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return constant_type(left.value + right.value)
-    elif is_left_constant and left.value == 0:
+    elif left == constant_type(0):
         # Identity: 0 + a = a
         return right
-    elif is_right_constant and right.value == 0:
+    elif right == constant_type(0):
         # Identity: a + 0 = a
         return left
     return type(expression)(left, right)
@@ -148,11 +142,9 @@ constant_folding.register_handler(
 def _handle_subtract(constant_type, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return constant_type(left.value - right.value)
-    elif is_right_constant and right.value == 0:
+    elif right == constant_type(0):
         # Identity: a - 0 = a
         return left
     elif left == right:
@@ -171,20 +163,18 @@ constant_folding.register_handler(
 def _handle_multiply(constant_type, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return constant_type(left.value * right.value)
-    elif is_left_constant and left.value == 1:
+    elif left == constant_type(1):
         # Identity: 1 * a = a
         return right
-    elif is_right_constant and right.value == 1:
+    elif right == constant_type(1):
         # Identity: a * 1 = a
         return left
-    elif is_left_constant and left.value == 0:
+    elif left == constant_type(0):
         # Identity: 0 * a = 0
         return left
-    elif is_right_constant and right.value == 0:
+    elif right == constant_type(0):
         # Identity: a * 0 = 0
         return right
     return type(expression)(left, right)
@@ -200,17 +190,15 @@ constant_folding.register_handler(
 def _handle_divide(constant_type, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return constant_type(left.value / right.value)
-    elif is_right_constant and right.value == 1:
+    elif right == constant_type(1):
         # Identity: a / 1 = a
         return left
-    elif is_left_constant and left.value == 0:
+    elif left == constant_type(0):
         # Identity: 0 / a = 0 (a != 0)
         return left
-    elif is_right_constant and right.value == 0:
+    elif right == constant_type(0):
         # Identity: 0 / a = 0 (a != 0)
         raise ZeroDivisionError
     elif left == right:
@@ -229,17 +217,15 @@ constant_folding.register_handler(
 def _handle_power(constant_type, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return constant_type(left.value ** right.value)
-    elif is_right_constant and right.value == 1:
+    elif right == constant_type(1):
         # Identity: a ** 1 = a
         return left
-    elif is_right_constant and right.value == 0:
+    elif right == constant_type(0):
         # Identity: a ** 0 = 1
         return constant_type(1)
-    elif is_left_constant and left.value == 1:
+    elif left == constant_type(1):
         # Identity: 1 ** a = 1
         return left
     return type(expression)(left, right)
@@ -252,12 +238,9 @@ constant_folding.register_handler(
 def _handle_equals(constant_type, func, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return BooleanConstant(func(left.value, right.value))
-    elif left  == right:
-        # Identity: a ** 1 = a
+    elif left == right:
         return BooleanConstant(True)
     return type(expression)(left, right)
 
@@ -286,12 +269,9 @@ constant_folding.register_handler(
 def _handle_not_equals(constant_type, func, context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, constant_type)
-    is_right_constant = isinstance(right, constant_type)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, constant_type) and isinstance(right, constant_type):
         return BooleanConstant(func(left.value, right.value))
-    elif left  == right:
-        # Identity: a ** 1 = a
+    elif left == right:
         return BooleanConstant(False)
     return type(expression)(left, right)
 
@@ -342,36 +322,19 @@ def _handle_vector_from_scalar(context, expression):
     return VectorFromScalar(x, y, z)
 
 
-def _is_constant_vector(vector, x, y, z):
-    return (
-        isinstance(vector, VectorConstant)
-        and vector.xvalue == x
-        and vector.yvalue == y
-        and vector.zvalue == z
-    )
-
-_is_zero_vector = lambda v: _is_constant_vector(v, 0, 0, 0)
-_is_one_vector = lambda v: _is_constant_vector(v, 1, 1, 1)
-_is_x_vector = lambda v: _is_constant_vector(v, 1, 0, 0)
-_is_y_vector = lambda v: _is_constant_vector(v, 0, 1, 0)
-_is_z_vector = lambda v: _is_constant_vector(v, 0, 0, 1)
-
-
 @constant_folding.handler(VectorAdd)
 def _handle_vector_add(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, VectorConstant)
-    is_right_constant = isinstance(right, VectorConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, VectorConstant) and isinstance(right, VectorConstant):
         return VectorConstant(
             left.xvalue + right.xvalue,
             left.yvalue + right.yvalue,
             left.zvalue + right.zvalue,
         )
-    elif _is_zero_vector(left):
+    elif left == VectorConstant(0, 0, 0):
         return right
-    elif _is_zero_vector(right):
+    elif right == VectorConstant(0, 0, 0):
         return left
     return VectorAdd(left, right)
 
@@ -380,15 +343,13 @@ def _handle_vector_add(context, expression):
 def _handle_vector_subtract(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, VectorConstant)
-    is_right_constant = isinstance(right, VectorConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, VectorConstant) and isinstance(right, VectorConstant):
         return VectorConstant(
             left.xvalue - right.xvalue,
             left.yvalue - right.yvalue,
             left.zvalue - right.zvalue,
         )
-    elif _is_zero_vector(right):
+    elif right == VectorConstant(0, 0, 0):
         return left
     return VectorSubtract(left, right)
 
@@ -397,19 +358,17 @@ def _handle_vector_subtract(context, expression):
 def _handle_vector_multiply(context, expression):
     vector = context.get(expression.loperand)
     scalar = context.get(expression.roperand)
-    is_vector_constant = isinstance(vector, VectorConstant)
-    is_scalar_constant = isinstance(scalar, ScalarConstant)
-    if is_vector_constant and is_scalar_constant:
+    if isinstance(vector, VectorConstant) and isinstance(scalar, ScalarConstant):
         return VectorConstant(
             vector.xvalue * scalar.value,
             vector.yvalue * scalar.value,
             vector.zvalue * scalar.value,
         )
-    elif is_scalar_constant and scalar.value == 1:
+    elif scalar == ScalarConstant(1):
         return vector
-    elif is_scalar_constant and scalar.value == 0:
+    elif scalar == ScalarConstant(0):
         return VectorConstant(0, 0, 0)
-    elif _is_zero_vector(vector):
+    elif vector == VectorConstant(0, 0, 0):
         return VectorConstant(0, 0, 0)
     return VectorMultiply(vector, scalar)
 
@@ -418,20 +377,18 @@ def _handle_vector_multiply(context, expression):
 def _handle_vector_divide(context, expression):
     vector = context.get(expression.loperand)
     scalar = context.get(expression.roperand)
-    is_vector_constant = isinstance(vector, VectorConstant)
-    is_scalar_constant = isinstance(scalar, ScalarConstant)
-    if is_vector_constant and is_scalar_constant:
+    if isinstance(vector, VectorConstant) and isinstance(scalar, ScalarConstant):
         return VectorConstant(
             vector.xvalue / scalar.value,
             vector.yvalue / scalar.value,
             vector.zvalue / scalar.value,
         )
-    elif is_scalar_constant and scalar.value == 1:
+    elif scalar == ScalarConstant(1):
         return vector
-    elif is_scalar_constant and scalar.value == 0:
+    elif scalar == ScalarConstant(0):
         raise ZeroDivisionError
-    elif _is_zero_vector(vector):
-        return VectorConstant(0, 0, 0)
+    elif vector == VectorConstant(0, 0, 0):
+        return vector
     return VectorDivide(vector, scalar)
 
 
@@ -439,24 +396,22 @@ def _handle_vector_divide(context, expression):
 def _handle_dot_product(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, VectorConstant)
-    is_right_constant = isinstance(right, VectorConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, VectorConstant) and isinstance(right, VectorConstant):
         return ScalarConstant(
             left.xvalue * right.xvalue
             + left.yvalue * right.yvalue
             + left.zvalue * right.zvalue
         )
-    elif _is_zero_vector(left) or _is_zero_vector(right):
+    elif left == VectorConstant(0, 0, 0) or right == VectorConstant(0, 0, 0):
         return ScalarConstant(0)
     for a, b in ((left, right), (right, left)):
-        if _is_x_vector(a) and isinstance(b, VectorFromScalar):
+        if a == VectorConstant(1, 0, 0) and isinstance(b, VectorFromScalar):
             # Identity: (1,0,0)*(x,y,z) = x
             return b.xvalue
-        elif _is_y_vector(a) and isinstance(b, VectorFromScalar):
+        elif a == VectorConstant(0, 1, 0) and isinstance(b, VectorFromScalar):
             # Identity: (0,1,0)*(x,y,z) = y
             return b.yvalue
-        elif _is_z_vector(a) and isinstance(b, VectorFromScalar):
+        elif a == VectorConstant(0, 0, 1) and isinstance(b, VectorFromScalar):
             # Identity: (0,0,1)*(x,y,z) = z
             return b.zvalue
     return VectorDotProduct(left, right)
@@ -466,15 +421,17 @@ def _handle_dot_product(context, expression):
 def _handle_cross_product(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, VectorConstant)
-    is_right_constant = isinstance(right, VectorConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, VectorConstant) and isinstance(right, VectorConstant):
         return VectorConstant(
             left.yvalue * right.zvalue - left.zvalue * right.yvalue,
             left.zvalue * right.xvalue - left.xvalue * right.zvalue,
             left.xvalue * right.yvalue - left.yvalue * right.xvalue,
         )
-    elif left == right or _is_zero_vector(left) or _is_zero_vector(right):
+    elif (
+        left == right
+        or left == VectorConstant(0, 0, 0)
+        or right == VectorConstant(0, 0, 0)
+    ):
         return VectorConstant(0, 0, 0)
     return VectorCrossProduct(left, right)
 
@@ -514,24 +471,6 @@ def _handle_vector_length(context, expression):
     return VectorLength(vector)
 
 
-def _is_zero_matrix(matrix):
-    return matrix == MatrixConstant(
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-    )
-
-
-def _is_identity_matrix(matrix):
-    return matrix == MatrixConstant(
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1,
-    )
-
-
 @constant_folding.handler(MatrixFromScalar)
 def _handle_scalar_to_matrix(context, expression):
     scalars = [context.get(a) for a in expression._values]
@@ -556,15 +495,13 @@ def _handle_matrix_component(context, expression):
 def _handle_matrix_add(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, MatrixConstant)
-    is_right_constant = isinstance(right, MatrixConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, MatrixConstant) and isinstance(right, MatrixConstant):
         return MatrixConstant(
             *(a + b for a,b in zip(left._values, right._values))
         )
-    if _is_zero_matrix(left):
+    elif left == Matrix.ZERO:
         return right
-    if _is_zero_matrix(right):
+    elif right == Matrix.ZERO:
         return left
     return MatrixAdd(left, right)
 
@@ -573,16 +510,14 @@ def _handle_matrix_add(context, expression):
 def _handle_matrix_subtract(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, MatrixConstant)
-    is_right_constant = isinstance(right, MatrixConstant)
-    if is_left_constant and is_right_constant:
+    if isinstance(left, MatrixConstant) and isinstance(right, MatrixConstant):
         return MatrixConstant(
             *(a - b for a,b in zip(left._values, right._values))
         )
-    if _is_zero_matrix(right):
+    if right == Matrix.ZERO:
         return left
     elif left == right:
-        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+        return Matrix.ZERO
     return MatrixSubtract(left, right)
 
 
@@ -590,18 +525,12 @@ def _handle_matrix_subtract(context, expression):
 def _handle_matrix_scalar_multiply(context, operator):
     matrix = context.get(operator.loperand)
     scalar = context.get(operator.roperand)
-    is_matrix_constant = isinstance(matrix, MatrixConstant)
-    is_scalar_constant = isinstance(scalar, ScalarConstant)
-    if is_scalar_constant and is_matrix_constant:
-        s = scalar.value
-        return MatrixConstant(*(a * s for a in matrix._values))
-    elif is_scalar_constant and scalar.value == 1:
+    if isinstance(matrix, MatrixConstant) and isinstance(scalar, ScalarConstant):
+        return MatrixConstant(*(a * scalar.value for a in matrix._values))
+    elif scalar == ScalarConstant(1):
         return matrix
-    elif (
-        (is_scalar_constant and scalar.value == 0)
-        or (is_matrix_constant and _is_zero_matrix(matrix))
-    ):
-        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+    elif scalar == ScalarConstant(0) or matrix == Matrix.ZERO:
+        return Matrix.ZERO
     return MatrixScalarMultiply(matrix, scalar)
 
 
@@ -609,17 +538,15 @@ def _handle_matrix_scalar_multiply(context, operator):
 def _handle_matrix_divide(context, operator):
     matrix = context.get(operator.loperand)
     scalar = context.get(operator.roperand)
-    is_matrix_constant = isinstance(matrix, MatrixConstant)
-    is_scalar_constant = isinstance(scalar, ScalarConstant)
-    if is_scalar_constant and is_matrix_constant:
+    if isinstance(matrix, MatrixConstant) and isinstance(scalar, ScalarConstant):
         s = scalar.value
         return MatrixConstant(*(a / s for a in matrix._values))
-    elif is_scalar_constant and scalar.value == 1:
+    elif scalar == ScalarConstant(1):
         return matrix
-    elif is_scalar_constant and scalar.value == 0:
+    elif scalar == ScalarConstant(0):
         raise ZeroDivisionError
-    elif is_matrix_constant and _is_zero_matrix(matrix):
-        return MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+    elif matrix == Matrix.ZERO:
+        return Matrix.ZERO
     return MatrixDivide(matrix, scalar)
 
 
@@ -627,18 +554,16 @@ def _handle_matrix_divide(context, operator):
 def _handle_matrix_vector_multiply(context, expression):
     matrix = context.get(expression.loperand)
     vector = context.get(expression.roperand)
-    is_matrix_constant = isinstance(matrix, MatrixConstant)
-    is_vector_constant = isinstance(vector, VectorConstant)
-    if is_vector_constant and is_matrix_constant:
+    if isinstance(matrix, MatrixConstant) and isinstance(vector, VectorConstant):
         x, y, z = vector._values
         return VectorConstant(
             x*matrix.a00 + y*matrix.a01 + z*matrix.a02,
             x*matrix.a10 + y*matrix.a11 + z*matrix.a12,
             x*matrix.a20 + y*matrix.a21 + z*matrix.a22,
         )
-    elif _is_zero_vector(vector) or _is_identity_matrix(matrix):
+    elif vector == VectorConstant(0, 0, 0) or matrix == Matrix.IDENTITY:
         return vector
-    elif _is_zero_matrix(matrix):
+    elif matrix == Matrix.ZERO:
         return VectorConstant(0, 0, 0)
     return VectorMatrixMultiply(vector, matrix)
 
@@ -647,18 +572,16 @@ def _handle_matrix_vector_multiply(context, expression):
 def _handle_vector_matrix_multiply(context, expression):
     vector = context.get(expression.loperand)
     matrix = context.get(expression.roperand)
-    is_vector_constant = isinstance(vector, VectorConstant)
-    is_matrix_constant = isinstance(matrix, MatrixConstant)
-    if is_vector_constant and is_matrix_constant:
+    if isinstance(matrix, MatrixConstant) and isinstance(vector, VectorConstant):
         x, y, z = vector._values
         return VectorConstant(
             x*matrix.a00 + y*matrix.a10 + z*matrix.a20,
             x*matrix.a01 + y*matrix.a11 + z*matrix.a21,
             x*matrix.a02 + y*matrix.a12 + z*matrix.a22,
         )
-    elif _is_zero_vector(vector) or _is_identity_matrix(matrix):
+    elif vector == VectorConstant(0, 0, 0) or matrix == Matrix.IDENTITY:
         return vector
-    elif _is_zero_matrix(matrix):
+    elif matrix == Matrix.ZERO:
         return VectorConstant(0, 0, 0)
     return VectorMatrixMultiply(vector, matrix)
 
@@ -667,46 +590,35 @@ def _handle_vector_matrix_multiply(context, expression):
 def _handle_matrix_multiply(context, expression):
     left = context.get(expression.loperand)
     right = context.get(expression.roperand)
-    is_left_constant = isinstance(left, MatrixConstant)
-    is_right_constant = isinstance(right, MatrixConstant)
-    if is_left_constant and is_right_constant:
-        m1 = left
-        m2 = right
-        a00 = m1.a00*m2.a00 + m1.a01*m2.a10 + m1.a02*m2.a20 + m1.a03*m2.a30
-        a01 = m1.a00*m2.a01 + m1.a01*m2.a11 + m1.a02*m2.a21 + m1.a03*m2.a31
-        a02 = m1.a00*m2.a02 + m1.a01*m2.a12 + m1.a02*m2.a22 + m1.a03*m2.a32
-        a03 = m1.a00*m2.a03 + m1.a01*m2.a13 + m1.a02*m2.a23 + m1.a03*m2.a33
-        a10 = m1.a10*m2.a00 + m1.a11*m2.a10 + m1.a12*m2.a20 + m1.a13*m2.a30
-        a11 = m1.a10*m2.a01 + m1.a11*m2.a11 + m1.a12*m2.a21 + m1.a13*m2.a31
-        a12 = m1.a10*m2.a02 + m1.a11*m2.a12 + m1.a12*m2.a22 + m1.a13*m2.a32
-        a13 = m1.a10*m2.a03 + m1.a11*m2.a13 + m1.a12*m2.a23 + m1.a13*m2.a33
-        a20 = m1.a20*m2.a00 + m1.a21*m2.a10 + m1.a22*m2.a20 + m1.a23*m2.a30
-        a21 = m1.a20*m2.a01 + m1.a21*m2.a11 + m1.a22*m2.a21 + m1.a23*m2.a31
-        a22 = m1.a20*m2.a02 + m1.a21*m2.a12 + m1.a22*m2.a22 + m1.a23*m2.a32
-        a23 = m1.a20*m2.a03 + m1.a21*m2.a13 + m1.a22*m2.a23 + m1.a23*m2.a33
-        a30 = m1.a30*m2.a00 + m1.a31*m2.a10 + m1.a32*m2.a20 + m1.a33*m2.a30
-        a31 = m1.a30*m2.a01 + m1.a31*m2.a11 + m1.a32*m2.a21 + m1.a33*m2.a31
-        a32 = m1.a30*m2.a02 + m1.a31*m2.a12 + m1.a32*m2.a22 + m1.a33*m2.a32
-        a33 = m1.a30*m2.a03 + m1.a31*m2.a13 + m1.a32*m2.a23 + m1.a33*m2.a33
+    if isinstance(left, MatrixConstant) and isinstance(right, MatrixConstant):
+        m1, m2 = left, right
         return MatrixConstant(
-            a00, a01, a02, a03,
-            a10, a11, a12, a13,
-            a20, a21, a22, a23,
-            a30, a31, a32, a33,
+            m1.a00*m2.a00 + m1.a01*m2.a10 + m1.a02*m2.a20 + m1.a03*m2.a30,
+            m1.a00*m2.a01 + m1.a01*m2.a11 + m1.a02*m2.a21 + m1.a03*m2.a31,
+            m1.a00*m2.a02 + m1.a01*m2.a12 + m1.a02*m2.a22 + m1.a03*m2.a32,
+            m1.a00*m2.a03 + m1.a01*m2.a13 + m1.a02*m2.a23 + m1.a03*m2.a33,
+            m1.a10*m2.a00 + m1.a11*m2.a10 + m1.a12*m2.a20 + m1.a13*m2.a30,
+            m1.a10*m2.a01 + m1.a11*m2.a11 + m1.a12*m2.a21 + m1.a13*m2.a31,
+            m1.a10*m2.a02 + m1.a11*m2.a12 + m1.a12*m2.a22 + m1.a13*m2.a32,
+            m1.a10*m2.a03 + m1.a11*m2.a13 + m1.a12*m2.a23 + m1.a13*m2.a33,
+            m1.a20*m2.a00 + m1.a21*m2.a10 + m1.a22*m2.a20 + m1.a23*m2.a30,
+            m1.a20*m2.a01 + m1.a21*m2.a11 + m1.a22*m2.a21 + m1.a23*m2.a31,
+            m1.a20*m2.a02 + m1.a21*m2.a12 + m1.a22*m2.a22 + m1.a23*m2.a32,
+            m1.a20*m2.a03 + m1.a21*m2.a13 + m1.a22*m2.a23 + m1.a23*m2.a33,
+            m1.a30*m2.a00 + m1.a31*m2.a10 + m1.a32*m2.a20 + m1.a33*m2.a30,
+            m1.a30*m2.a01 + m1.a31*m2.a11 + m1.a32*m2.a21 + m1.a33*m2.a31,
+            m1.a30*m2.a02 + m1.a31*m2.a12 + m1.a32*m2.a22 + m1.a33*m2.a32,
+            m1.a30*m2.a03 + m1.a31*m2.a13 + m1.a32*m2.a23 + m1.a33*m2.a33,
         )
-    elif _is_identity_matrix(left):
+    elif left == Matrix.IDENTITY or right == Matrix.ZERO:
         return right
-    elif _is_identity_matrix(right):
+    elif right == Matrix.IDENTITY or left == Matrix.ZERO:
         return left
-    elif _is_zero_matrix(left):
-        return left
-    elif _is_zero_matrix(right):
-        return right
     elif (
         (isinstance(left, MatrixInverse) and left.operand == right)
         or (isinstance(right, MatrixInverse) and right.operand == left)
     ):
-        return MatrixConstant(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+        return Matrix.IDENTITY
     return MatrixMultiply(left, right)
 
 
@@ -728,7 +640,7 @@ def _handle_matrix_transpose(context, expression):
 @constant_folding.handler(MatrixInverse)
 def _handle_matrix_inverse(context, expression):
     operand = context.get(expression.operand)
-    if _is_identity_matrix(operand):
+    if operand == Matrix.IDENTITY:
         return operand
     elif isinstance(operand, MatrixInverse):
         return operand.operand

@@ -308,7 +308,7 @@ class TestConstantFolding(unittest.TestCase):
         S = ScalarConstant
         V = VectorConstant
         M = MatrixConstant
-        zero = M(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
+        zero = Matrix.ZERO
         m1 = M(
             -1.47562898915, 7.73892261048, -0.636700193883, -7.27511191565,
             -9.13895323721, 7.73574129521, 0.973591335962, 3.01430692063,
@@ -379,8 +379,8 @@ class TestConstantFolding(unittest.TestCase):
         a = MatrixVar('a')
         u = VectorVar('u')
         k = ScalarVar('k')
-        zero = M(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
-        ident = M(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+        zero = Matrix.ZERO
+        ident = Matrix.IDENTITY
 
         ctx = constant_folding.context()
 
