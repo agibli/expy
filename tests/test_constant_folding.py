@@ -450,3 +450,7 @@ class TestConstantFolding(unittest.TestCase):
         ctx = constant_folding.context()
         example1 = (S(1) + S(2))*(S(7)**S(2) - S(4)/S(3))
         self._assert_scalar_equal(ctx.get(example1), S(143.0))
+
+
+if __name__ == '__main__':
+    unittest.main()

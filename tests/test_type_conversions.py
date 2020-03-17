@@ -103,3 +103,7 @@ class TestTypeConversions(unittest.TestCase):
         self.assertEqual(conv.convert(Base, "a"), A("a"))
         self.assertEqual(conv.convert(Base, "b"), B("b"))
         self.assertEqual(conv.convert(Base, "c"), C("c"))
+
+
+if __name__ == '__main__':
+    unittest.main()

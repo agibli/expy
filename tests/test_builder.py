@@ -94,3 +94,7 @@ class TestBuilder(unittest.TestCase):
 
         ctx = builder.context()
         self.assertEqual(ctx.get(In()), Out())
+
+
+if __name__ == '__main__':
+    unittest.main()

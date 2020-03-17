@@ -36,3 +36,7 @@ class TestExpression(unittest.TestCase):
         self.assertIn(c, test_set)
         self.assertNotIn(A(1), test_set)
         self.assertNotIn(B(0), test_set)
+
+
+if __name__ == '__main__':
+    unittest.main()
