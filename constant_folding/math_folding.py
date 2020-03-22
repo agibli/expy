@@ -312,9 +312,9 @@ def _handle_vector_component(context, expression):
 
 @constant_folding.handler(VectorFromScalar)
 def _handle_vector_from_scalar(context, expression):
-    x = context.get(expression.xvalue)
-    y = context.get(expression.yvalue)
-    z = context.get(expression.zvalue)
+    x = context.get(expression.x)
+    y = context.get(expression.y)
+    z = context.get(expression.z)
     if (
         isinstance(x, ScalarConstant)
         and isinstance(y, ScalarConstant)
@@ -409,13 +409,13 @@ def _handle_dot_product(context, expression):
     for a, b in ((left, right), (right, left)):
         if a == VectorConstant(1, 0, 0) and isinstance(b, VectorFromScalar):
             # Identity: (1,0,0)*(x,y,z) = x
-            return b.xvalue
+            return b.x
         elif a == VectorConstant(0, 1, 0) and isinstance(b, VectorFromScalar):
             # Identity: (0,1,0)*(x,y,z) = y
-            return b.yvalue
+            return b.y
         elif a == VectorConstant(0, 0, 1) and isinstance(b, VectorFromScalar):
             # Identity: (0,0,1)*(x,y,z) = z
-            return b.zvalue
+            return b.z
     return VectorDotProduct(left, right)
 
 
@@ -486,10 +486,8 @@ def _handle_matrix_component(context, expression):
     value = context.get(expression.value)
     i = expression.row
     j = expression.column
-    if isinstance(value, MatrixConstant):
-        return ScalarConstant(getattr(value, "a{}{}".format(i,j)))
-    elif isinstance(value, MatrixFromScalar):
-        return getattr(value, "a{}{}".format(i,j))
+    if isinstance(value, MatrixConstant) or isinstance(value, MatrixFromScalar):
+        return value[i,j]
     return MatrixComponent(value, i, j)
 
 

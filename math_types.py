@@ -295,11 +295,23 @@ class VectorConstant(Vector):
     yvalue = Field(float)
     zvalue = Field(float)
 
+    @property
+    def x(self):
+        return ScalarConstant(self.xvalue)
+
+    @property
+    def y(self):
+        return ScalarConstant(self.yvalue)
+
+    @property
+    def z(self):
+        return ScalarConstant(self.zvalue)
+
 
 class VectorFromScalar(Vector):
-    xvalue = Field(Scalar)
-    yvalue = Field(Scalar)
-    zvalue = Field(Scalar)
+    x = Field(Scalar)
+    y = Field(Scalar)
+    z = Field(Scalar)
 
 
 VectorAdd = binary_expression("VectorAdd", Vector)
@@ -374,6 +386,9 @@ class MatrixConstant(Matrix):
     a32 = Field(float, default=0.0)
     a33 = Field(float, default=1.0)
 
+    def __getitem__(self, ij):
+        return ScalarConstant(getattr(self, "a{}{}".format(*ij)))
+
 
 Matrix.ZERO = MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
 Matrix.IDENTITY = MatrixConstant(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
@@ -396,6 +411,9 @@ class MatrixFromScalar(Matrix):
     a31 = Field(Scalar, default=0.0)
     a32 = Field(Scalar, default=0.0)
     a33 = Field(Scalar, default=1.0)
+
+    def __getitem__(self, ij):
+        return getattr(self, "a{}{}".format(*ij))
 
 
 class MatrixComponent(Scalar):
