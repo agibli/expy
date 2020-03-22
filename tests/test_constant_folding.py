@@ -1,3 +1,5 @@
+from __future__ import division
+
 import unittest
 
 from expy import type_conversions

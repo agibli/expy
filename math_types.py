@@ -99,6 +99,9 @@ class Integer(Expression):
     def __rtruediv__(self, other):
         return expr(other) / self
 
+    __div__ = __truediv__
+    __rdiv__ = __rtruediv__
+
     def __pow__(self, other):
         return ScalarPower(self, other)
 
@@ -125,6 +128,7 @@ class Integer(Expression):
 
 
 IntegerConstant = cast_expression("IntegerConstant", Integer, int)
+
 IntegerAdd = binary_expression("IntegerAdd", Integer)
 IntegerSubtract = binary_expression("IntegerSubtract", Integer)
 IntegerMultiply = binary_expression("IntegerMultiply", Integer)
@@ -174,6 +178,9 @@ class Scalar(Expression):
 
     def __rtruediv__(self, other):
         return expr(other) / self
+
+    __div__ = __truediv__
+    __rdiv__ = __rtruediv__
 
     def __pow__(self, other):
         return ScalarPower(self, other)
@@ -247,6 +254,8 @@ class Vector(Expression):
 
     def __truediv__(self, other):
         return VectorDivide(self, other)
+
+    __div__ = __truediv__
 
     def __xor__(self, other):
         return self.cross(other)
@@ -333,6 +342,8 @@ class Matrix(Expression):
 
     def __truediv__(self, other):
         return MatrixDivide(self, other)
+
+    __div__ = __truediv__
 
     def __getitem__(self, ij):
         i, j = ij
