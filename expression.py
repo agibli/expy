@@ -9,8 +9,9 @@ class Field(object):
 
     _next_sort_order = 0
 
-    def __init__(self, type=object, display_name=None, default=None):
+    def __init__(self, type=object, name=None, display_name=None, default=None):
         self.type = type
+        self.name = name
         self.display_name = display_name
         self.default = default
         self._sort_order = Field._next_sort_order
@@ -41,15 +42,17 @@ class ExpressionMeta(type):
             if isinstance(base, ExpressionMeta):
                 fields.extend(base._fields)
         new_fields = []
+        attr_keys = {}
         for k, v in attrs.items():
             if isinstance(v, Field):
-                v.name = k
-                v.display_name = v.display_name or k
+                attr_keys[v] = k
+                v.name = v.name or k
+                v.display_name = v.display_name or v.name
                 new_fields.append(v)
         new_fields.sort(key=lambda f: f._sort_order)
         fields.extend(new_fields)
         for i, f in enumerate(fields):
-            attrs[f.name] = FieldGetter(i)
+            attrs[attr_keys[f]] = FieldGetter(i)
         attrs["_fields"] = tuple(fields)
         attrs["__slots__"] = ("_values", "_hash")
         attrs.setdefault("__isabstractexpression__", False)
