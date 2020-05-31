@@ -321,6 +321,17 @@ def _handle_vector_from_scalar(context, expression):
         and isinstance(z, ScalarConstant)
     ):
         return VectorConstant(x, y, z)
+    # (a.x, a.y, a.z) == a
+    if (
+        isinstance(x, VectorComponent) and x.index == 0
+        and isinstance(y, VectorComponent) and y.index == 1
+        and isinstance(z, VectorComponent) and z.index == 2
+    ):
+        a = context.get(x.value)
+        b = context.get(y.value)
+        c = context.get(z.value)
+        if a == b == c:
+            return a
     return VectorFromScalar(x, y, z)
 
 

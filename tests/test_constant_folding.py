@@ -259,6 +259,7 @@ class TestConstantFolding(unittest.TestCase):
         self.assertEqual(ctx.get(V(0, 1, 2).x), S(0))
         self.assertEqual(ctx.get(V(0, 1, 2).y), S(1))
         self.assertEqual(ctx.get(V(0, 1, 2).z), S(2))
+        self.assertEqual(ctx.get(S2V(a.x,a.y,a.z)), a)
 
         # a + (0,0,0) = a
         self.assertEqual(ctx.get(V(0,0,0) + a), a)
