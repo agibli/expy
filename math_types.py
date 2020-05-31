@@ -285,11 +285,6 @@ class Vector(Expression):
         return VectorNormalize(self)
 
 
-class VectorComponent(Scalar):
-    value = Field(Vector)
-    index = Field(int)
-
-
 class VectorConstant(Vector):
     xvalue = Field(float)
     yvalue = Field(float)
@@ -306,6 +301,18 @@ class VectorConstant(Vector):
     @property
     def z(self):
         return ScalarConstant(self.zvalue)
+
+
+Vector.ZERO = VectorConstant(0.0, 0.0, 0.0)
+Vector.X = VectorConstant(1.0, 0.0, 0.0)
+Vector.Y = VectorConstant(0.0, 1.0, 0.0)
+Vector.Z = VectorConstant(0.0, 0.0, 1.0)
+Vector.ONES = VectorConstant(1.0, 1.0, 1.0)
+
+
+class VectorComponent(Scalar):
+    value = Field(Vector)
+    index = Field(int)
 
 
 class VectorFromScalar(Vector):
