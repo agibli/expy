@@ -1,3 +1,5 @@
+import pymel.core.datatypes as dt
+
 from ...builder import Builder
 
 
@@ -60,3 +62,25 @@ class CompoundResult(object):
 
     def child(self, index):
         return self.children[index]
+
+
+class TransformResult(object):
+    def __init__(self, translation, rotation, scale):
+        self.translation = translation
+        self.rotation = rotation
+        self.scale = scale
+
+    def assign_transform(self, transform):
+        self.translation.assign(transform.translate)
+        self.rotation.assign_transform(transform)
+        self.scale.assign(transform.scale)
+
+
+class EulerRotationResult(object):
+    def __init__(self, angles=ValueResult(dt.Vector()), order=ValueResult(0)):
+        self.angles = angles
+        self.order = order
+
+    def assign_transform(self, transform):
+        self.angles.assign(transform.rotate)
+        self.order.assign(transform.rotateOrder)
