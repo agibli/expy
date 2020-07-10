@@ -3,8 +3,8 @@ from __future__ import division
 import unittest
 
 from expy import type_conversions
-from expy.math_types import *
-from expy.constant_folding import constant_folding
+from expy.expressions.math import *
+from expy.builders.constant_folding import constant_folding
 
 
 def _var_type(name, base):

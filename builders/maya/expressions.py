@@ -1,17 +1,19 @@
+from __future__ import absolute_import
+
 import six
 
 import pymel.core as pm
 import pymel.core.datatypes as dt
 import pymel.core.nodetypes as nt
 
-from ..expression import (
+from ...expression import (
     Expression,
     Field,
     abstract_expression,
     cast_expression,
     expr,
 )
-from ..math_types import (
+from ...expressions.math import (
     Boolean,
     BooleanConstant,
     Integer,
@@ -23,7 +25,7 @@ from ..math_types import (
     Matrix,
     MatrixConstant,
 )
-from .. import type_conversions
+from ... import type_conversions
 
 
 BOOLEAN_ATTR_TYPES = ("bool",)

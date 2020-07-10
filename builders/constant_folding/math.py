@@ -1,10 +1,10 @@
-from __future__ import division
+from __future__ import absolute_import, division
 
 import math
 import operator
 import functools
 
-from ..math_types import *
+from ...expressions.math import *
 from .builder import constant_folding
 
 

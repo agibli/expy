@@ -1,6 +1,6 @@
 from __future__ import division
 
-from .expression import (
+from ..expression import (
     Expression,
     Field,
     abstract_expression,
@@ -9,7 +9,7 @@ from .expression import (
     cast_expression,
     expr,
 )
-from . import type_conversions
+from .. import type_conversions
 
 
 type_conversions.register_conversion(float, int)

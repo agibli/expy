@@ -1,4 +1,4 @@
-from ..builder import Builder
+from ...builder import Builder
 
 
 maya_builder = Builder()

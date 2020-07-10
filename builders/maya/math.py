@@ -1,8 +1,10 @@
+from __future__ import absolute_import
+
 import pymel.core as pm
 import pymel.core.datatypes as dt
 import pymel.core.nodetypes as nt
 
-from ..math_types import *
+from ...expressions.math import *
 
 from .builder import (
     maya_builder,
@@ -10,7 +12,7 @@ from .builder import (
     AttributeResult,
     CompoundResult,
 )
-from .maya_types import (
+from .expressions import (
     MayaBooleanAttribute,
     MayaIntegerAttribute,
     MayaScalarAttribute,
