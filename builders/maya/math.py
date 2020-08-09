@@ -47,6 +47,36 @@ def _handle_matrix_constant(context, expression):
     return ValueResult(dt.Matrix(*expression._values))
 
 
+@maya_builder.handler(ScalarFromInteger)
+@maya_builder.handler(ScalarFromBoolean)
+@maya_builder.handler(IntegerFromBoolean)
+def _handle_scalar_from_integer(context, expression):
+    return context.get(expression.value)
+
+
+@maya_builder.handler(IntegerFromScalar)
+def _handle_integer_from_scalar(context, expression):
+    clamp_node = pm.createNode("clamp")
+    context.get(expression.value).assign(clamp_node.inputR)
+    clamp_node.minR.set(-0.5)
+    clamp_node.maxR.set(0.5)
+    subtract_node = pm.createNode("plusMinusAverage")
+    subtract_node.operation.set(2)
+    context.get(expression.value).assign(subtract_node.input1D[0])
+    clamp_node.outputR.connect(subtract_node.input1D[1])
+    subtract_node.addAttr("roundedOutput1D", at="long")
+    subtract_node.output1D.connect(subtract_node.roundedOutput1D)
+    return AttributeResult(subtract_node.roundedOutput1D)
+
+
+@maya_builder.handler(BooleanFromScalar)
+@maya_builder.handler(BooleanFromInteger)
+def _handle_boolean_from_scalar(context, expression):
+    condition_node = pm.createNode("condition")
+    context.get(expression.value).assign(condition_node.firstTerm)
+    return AttributeResult(condition_node.outColorR)
+
+
 @maya_builder.handler(BooleanInverse)
 def _handle_boolean_inverse(context, expression):
     inv_node = pm.createNode("reverse")
@@ -67,7 +97,9 @@ def _handle_boolean_or(context, expression):
     or_node = pm.createNode("plusMinusAverage")
     context.get(expression.loperand).assign(or_node.input1D[0])
     context.get(expression.roperand).assign(or_node.input1D[1])
-    return AttributeResult(or_node.output1D)
+    or_node.addAttr("boolOutput1D", at="bool")
+    or_node.output1D.connect(or_node.boolOutput1D)
+    return AttributeResult(or_node.boolOutput1D)
 
 
 def _handle_scalar_plus_minus_average(context, values, operation):
