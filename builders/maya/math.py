@@ -176,11 +176,7 @@ def _handle_vector_from_scalar(context, expression):
 @maya_builder.handler(VectorComponent)
 def _handle_vector_component(context, expression):
     vector_result = context.get(expression.value)
-    return {
-        VectorComponent.x: vector_result.child(0),
-        VectorComponent.y: vector_result.child(1),
-        VectorComponent.z: vector_result.child(2),
-    }
+    return vector_result.child(expression.index)
 
 
 def _handle_vector_plus_minus_average(context, values, operation):
