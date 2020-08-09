@@ -5,4 +5,5 @@ from . import (
     math as _math,
     transform as _transform,
     scene as _scene,
+    geometry as _geometry,
 )
