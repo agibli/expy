@@ -3,50 +3,47 @@ from collections import namedtuple
 from .expression import Expression
 
 
-class BuilderBase(object):
+class BuildContextBase(object):
+    def __init__(self):
+        self._cache = {}
 
-    class Context(object):
-        def __init__(self, builder):
-            self.builder = builder
-            self._cache = {}
-
-        def get(self, expression):
-            try:
-                return self._cache[expression]
-            except KeyError:
-                pass
-            result = self.builder._build(self, expression)
-            self.put(expression, result)
-            return result
-
-        def put(self, expression, result):
+    def get(self, expression):
+        try:
+            result = self._cache[expression]
+        except KeyError:
+            result = self._build(expression)
             self._cache[expression] = result
+        return result
 
-    def context(self):
-        return self.Context(self)
-
-    def _build(self, context, expression):
-        raise NotImplementedError("Unsupported expression")
+    def _build(self, expression):
+        raise NotImplementedError("Unsupported expression: {}".format(expression))
 
 
-class Builder(BuilderBase):
+class BuildContext(BuildContextBase):
+    def __init__(self, builder):
+        super(BuildContext, self).__init__()
+        self.builder = builder
 
-    _HandlerInfo = namedtuple("_HandlerInfo", ["func", "propagate"])
+    def _build(self, expression):
+        return self.builder.call_handler(self, expression)
+
+
+class Builder(object):
 
     def __init__(self):
         super(Builder, self).__init__()
         self._handlers = {}
 
-    def register_handler(self, expression_type, handler, propagate=True):
-        self._handlers[expression_type] = self._HandlerInfo(handler, propagate)
+    def register_handler(self, expression_type, handler):
+        self._handlers[expression_type] = handler
 
-    def handler(self, expression_type, propagate=True):
+    def handler(self, expression_type):
         def decorator(func):
-            self.register_handler(expression_type, func, propagate)
+            self.register_handler(expression_type, func)
             return func
         return decorator
 
-    def _get_handler(self, expression_type):
+    def get_handler(self, expression_type):
         if not isinstance(expression_type, type):
             expression_type = type(expression_type)
         for base in expression_type.mro():
@@ -54,45 +51,25 @@ class Builder(BuilderBase):
                 return self._handlers[base]
             except KeyError:
                 continue
-        raise NotImplementedError(
-            "Unsupported expression: {}".format(expression_type.__name__)
-        )
+        return self.default_handler
 
-    def _build(self, context, expression):
-        seen = set()
-        stack = [expression]
-        pending = []
-        while stack:
-            x = stack.pop()
-            if x in seen:
-                continue
-            seen.add(x)
-            handler = self._get_handler(x)
-            pending.append((x, handler))
-            if handler.propagate:
-                for value in x._values:
-                    if isinstance(value, Expression):
-                        stack.append(value)
-        while pending:
-            x, handler = pending.pop()
-            result = handler.func(context, x)
-            context.put(x, result)
-        return result
+    def default_handler(self, context, expression):
+        raise NotImplementedError("Unsupported expression: {}".format(expression))
+
+    def call_handler(self, context, expression):
+        return self.get_handler(expression)(context, expression)
+
+    def context(self):
+        return BuildContext(self)
 
 
-class Pipeline(BuilderBase):
-
-    class Context(BuilderBase.Context):
-        def __init__(self, builder):
-            super(Pipeline.Context, self).__init__(builder)
-            self.children = tuple(s.context() for s in builder.stages)
-
+class PipelineContext(BuildContextBase):
     def __init__(self, stages):
-        super(Pipeline, self).__init__()
-        self.stages = list(stages)
+        super(PipelineContext, self).__init__()
+        self.stages = stages
 
-    def _build(self, context, expression):
+    def _build(self, expression):
         result = expression
-        for child_context in context.children:
-            result = child_context.get(result)
+        for stage in self.stages:
+            result = stage.get(expression)
         return result

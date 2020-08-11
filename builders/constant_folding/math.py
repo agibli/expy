@@ -34,7 +34,7 @@ constant_folding.register_handler(
 )
 
 
-@constant_folding.handler(BooleanAnd, propagate=False)
+@constant_folding.handler(BooleanAnd)
 def _handle_boolean_and(context, expression):
     left = context.get(expression.loperand)
     if left == BooleanConstant(False):
@@ -47,7 +47,7 @@ def _handle_boolean_and(context, expression):
     return BooleanAnd(left, right)
 
 
-@constant_folding.handler(BooleanOr, propagate=False)
+@constant_folding.handler(BooleanOr)
 def _handle_boolean_or(context, expression):
     left = context.get(expression.loperand)
     if left == BooleanConstant(True):
