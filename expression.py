@@ -34,6 +34,34 @@ class FieldGetter(object):
         return self
 
 
+class Output(object):
+
+    _sort_order_count = itertools.count()
+
+    def __init__(self, type, display_name=None):
+        self.type = type
+        self.name = None
+        self.display_name = display_name
+        self._expression_type = None
+        self._sort_order = next(Output._sort_order_count)
+
+    def _init_expression_type(self, self_type):
+        class_name = "{}.{}".format(self_type.__name__, self.name)
+        class_namespace = {
+            "self": Field(self_type),
+        }
+        self._expression_type = _expression_type(
+            class_name, self.type, class_namespace,
+        )
+
+    def __get__(self, obj, cls=None):
+        if obj is not None:
+            return self._expression_type(obj)
+        if cls is not None:
+            return self._expression_type
+        return self
+
+
 class ExpressionMeta(type):
 
     def __new__(cls, name, bases, attrs):
@@ -41,12 +69,18 @@ class ExpressionMeta(type):
         for base in bases:
             if isinstance(base, ExpressionMeta):
                 fields.extend(base._fields)
+                outputs.extend(base._outputs)
         new_fields = []
+        outputs = []
         for k, v in attrs.items():
             if isinstance(v, Field):
                 v.name = k
                 v.display_name = v.display_name or v.name
                 new_fields.append(v)
+            if isinstance(v, Output):
+                v.name = k
+                v.display_name = v.display_name or v.name
+                outputs.append(v)
         new_fields.sort(key=lambda f: f._sort_order)
         fields.extend(new_fields)
         for i, f in enumerate(fields):
@@ -54,7 +88,10 @@ class ExpressionMeta(type):
         attrs["_fields"] = tuple(fields)
         attrs["__slots__"] = ("_values", "_hash")
         attrs.setdefault("__isabstractexpression__", False)
-        return type.__new__(cls, name, bases, attrs)
+        result = type.__new__(cls, name, bases, attrs)
+        for output in outputs:
+            output._init_expression_type(result)
+        return result
 
 
 def abstract_expression(cls):
