@@ -1,4 +1,5 @@
 import sys
+import itertools
 
 from six import with_metaclass
 
@@ -7,15 +8,14 @@ from . import type_conversions
 
 class Field(object):
 
-    _next_sort_order = 0
+    _sort_order_count = itertools.count()
 
     def __init__(self, type=object, name=None, display_name=None, default=None):
         self.type = type
         self.name = name
         self.display_name = display_name
         self.default = default
-        self._sort_order = Field._next_sort_order
-        Field._next_sort_order += 1
+        self._sort_order = next(Field._sort_order_count)
 
     def construct(self, value):
         return type_conversions.convert(self.type, value)
