@@ -32,7 +32,7 @@ def _handle_curve_instance(context, expression):
     return result
 
 
-@maya_builder.handler(CurveInstanceWorld)
+@maya_builder.handler(CurveInstance.world_curve)
 def _handle_curve_instance(context, expression):
     shape = context.get(expression.operand)
     return AttributeResult(shape.worldSpace[0])

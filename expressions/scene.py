@@ -3,6 +3,8 @@ from enum import Enum
 from ..expression import (
     Expression,
     Field,
+    Output,
+    SelfType,
     abstract_expression,
     unary_expression,
     binary_expression,
@@ -27,21 +29,10 @@ Scene.DEFAULT = DefaultScene()
 
 @abstract_expression
 class Object(Expression):
-    @property
-    def parent(self):
-        return ObjectParent(self)
-
-    @property
-    def scene(self):
-        return ObjectScene(self)
-
-    @property
-    def local(self):
-        return ObjectLocalTransform(self)
-
-    @property
-    def world(self):
-        return ObjectWorldTransform(self)
+    parent = Output(SelfType)
+    scene = Output(Scene)
+    local = Output(Transform)
+    world = Output(Transform)
 
     @property
     def find_child(self, name, recursive=False):
@@ -50,12 +41,6 @@ class Object(Expression):
 
 class SceneRoot(Object):
     scene = Field(Scene)
-
-
-ObjectParent = unary_expression("ObjectParent", Object, Object)
-ObjectScene = unary_expression("ObjectScene", Scene, Object)
-ObjectLocalTransform = unary_expression("ObjectLocalTransform", Transform, Object)
-ObjectWorldTransform = unary_expression("ObjectWorldTransform", Transform, Object)
 
 
 class ObjectFindChild(Object):
@@ -68,6 +53,11 @@ class CreateObject(Object):
     name = Field(str)
     transform = Field(Transform, default=Transform.IDENTITY)
     parent = Field(Object, default=Scene.DEFAULT.root)
+
+
+class CreateJoint(CreateObject):
+    orient = Field(Rotation, default=Rotation.IDENTITY)
+    display_scale = Field(Scalar, default=1.0)
 
 
 def attribute_expression(name, attribute_type):

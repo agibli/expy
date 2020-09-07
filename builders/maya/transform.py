@@ -68,17 +68,17 @@ def _handle_compose_transform(context, expression):
     )
 
 
-@maya_builder.handler(TransformTranslation)
+@maya_builder.handler(Transform.translation)
 def _handle_transform_translation(context, expression):
     return context.get(expression.operand).translation
 
 
-@maya_builder.handler(TransformRotation)
+@maya_builder.handler(Transform.rotation)
 def _handle_transform_rotation(context, expression):
     return context.get(expression.operand).rotation
 
 
-@maya_builder.handler(TransformScale)
+@maya_builder.handler(Transform.scale)
 def _handle_transform_scale(context, expression):
     return context.get(expression.operand).scale
 

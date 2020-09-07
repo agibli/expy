@@ -54,28 +54,15 @@ class EulerRotation(Rotation):
 
 @abstract_expression
 class Transform(Expression):
-    @property
-    def translation(self):
-        return TransformTranslation(self)
-    
-    @property
-    def rotation(self):
-        return TransformRotation(self)
-
-    @property
-    def scale(self):
-        return TransformScale(self)
+    translation = Output(Vector)
+    rotation = Output(Rotation)
+    scale = Output(Vector)
 
     def local_to_world(self, parent):
         return LocalToWorldTransform(parent, self)
 
     def world_to_local(self, parent):
         return WorldToLocalTransform(parent, self)
-
-
-TransformTranslation = unary_expression("TransformTranslation", Vector, Transform)
-TransformRotation = unary_expression("TransformRotation", Rotation, Transform)
-TransformScale = unary_expression("TransformScale", Vector, Transform)
 
 
 class WorldToLocalTransform(Transform):

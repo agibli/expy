@@ -3,6 +3,7 @@ from enum import Enum
 from ..expression import (
     Expression,
     Field,
+    Output,
     abstract_expression,
     unary_expression,
     binary_expression,
@@ -25,22 +26,10 @@ class PointOnCurve(Expression):
     curve = Field(Curve)
     u = Field(Scalar)
 
-    @property
-    def position(self):
-        return PointOnCurvePosition(self)
+    position = Output(Vector)
+    tangent = Output(Vector)
+    normal = Output(Vector)
 
-    @property
-    def tangent(self):
-        return PointOnCurveTangent(self)
-
-    @property
-    def normal(self):
-        return PointOnCurveNormal(self)
-
-
-PointOnCurvePosition = cast_expression("PointOnCurvePosition", Vector, PointOnCurve)
-PointOnCurveTangent = unary_expression("PointOnCurveTangent", Vector, PointOnCurve)
-PointOnCurveNormal = unary_expression("PointOnCurveNormal", Vector, PointOnCurve)
 
 TransformCurve = binary_expression("TransformCurve", Curve, Transform, Curve)
 
@@ -55,21 +44,10 @@ class PointOnSurface(Expression):
     u = Field(Scalar)
     v = Field(Scalar)
 
-    @property
-    def position(self):
-        return PointOnSurfacePosition(self)
-
-    @property
-    def tangent_u(self):
-        return PointOnSurfaceTangentU(self)
-
-    @property
-    def tangent_v(self):
-        return PointOnSurfaceTangentV(self)
-
-    @property
-    def normal(self):
-        return PointOnSurfaceNormal(self)
+    position = Output(Vector)
+    tangent_u = Output(Vector)
+    tangent_v = Output(Vector)
+    normal = Output(Vector)
 
 
 PointOnSurfacePosition = cast_expression("PointOnSurfacePosition", Vector, PointOnSurface)
@@ -96,10 +74,4 @@ class CubicBezier(Curve):
 class CurveInstance(Expression):
     parent = Field(Object)
     curve = Field(Curve)
-
-    @property
-    def world_curve(self):
-        return CurveInstanceWorld(self)
-
-
-CurveInstanceWorld = unary_expression("CurveInstanceWorld", Curve, CurveInstance)
+    world_curve = Output(Curve)

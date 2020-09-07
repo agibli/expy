@@ -35,7 +35,7 @@ def _handle_create_object(context, expression):
     return result
 
 
-@maya_builder.handler(ObjectParent)
+@maya_builder.handler(Object.parent)
 def _handle_object_parent(context, expression):
     obj = context.get(expression)
     if obj is None:
@@ -43,12 +43,12 @@ def _handle_object_parent(context, expression):
     return obj.getParent()
 
 
-@maya_builder.handler(ObjectScene)
+@maya_builder.handler(Object.scene)
 def _handle_object_scene(context, expression):
     return None
 
 
-@maya_builder.handler(ObjectLocalTransform)
+@maya_builder.handler(Object.local)
 def _handle_object_local_transform(context, expression):
     obj = context.get(expression.operand)
     if obj is None:
