@@ -45,6 +45,10 @@ class Boolean(Expression):
         return BooleanNotEquals(other, self)
 
 
+def boolean(value=False):
+    return type_conversions.convert(Boolean, value)
+
+
 BooleanConstant = cast_expression("BooleanConstant", Boolean, bool)
 BooleanInverse = unary_expression("BooleanInverse", Boolean)
 BooleanAnd = binary_expression("BooleanAnd", Boolean)
@@ -127,6 +131,10 @@ class Integer(Expression):
         return IntegerLessThanEquals(self, other)
 
 
+def integer(value=0):
+    return type_conversions.convert(Integer, value)
+
+
 IntegerConstant = cast_expression("IntegerConstant", Integer, int)
 
 IntegerAdd = binary_expression("IntegerAdd", Integer)
@@ -205,6 +213,10 @@ class Scalar(Expression):
 
     def __le__(self, other):
         return ScalarLessThanEquals(self, other)
+
+
+def scalar(value=0.0):
+    return type_conversions.convert(Scalar, value)
 
 
 ScalarConstant = cast_expression("ScalarConstant", Scalar, float)
@@ -310,6 +322,23 @@ Vector.Z = VectorConstant(0.0, 0.0, 1.0)
 Vector.ONES = VectorConstant(1.0, 1.0, 1.0)
 
 
+def vector(*args):
+    if len(args) == 0:
+        return Vector.ZERO
+    elif len(args) == 1:
+        return type_conversions.convert(Vector, args[0])
+    return type_conversions.convert(Vector, args)
+
+
+@type_conversions.conversion(Scalar, tuple)
+@type_conversions.conversion(Scalar, list)
+def _vector_from_args(value):
+    try:
+        return VectorConstant(*value)
+    except TypeError:
+        return VectorFromScalar(*value)
+
+
 class VectorComponent(Scalar):
     value = Field(Vector)
     index = Field(int)
@@ -399,6 +428,25 @@ class MatrixConstant(Matrix):
 
 Matrix.ZERO = MatrixConstant(0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0)
 Matrix.IDENTITY = MatrixConstant(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+
+
+def matrix(*args):
+    if len(args) == 0:
+        return Matrix.IDENTITY
+    elif len(args) == 1:
+        return type_conversions.convert(Matrix, args[0])
+    return type_conversions.convert(Matrix, args)
+
+
+@type_conversions.conversion(Matrix, tuple)
+@type_conversions.conversion(Matrix, list)
+def _matrix_from_args(value):
+    if len(value) == 4:
+        value = [value[i][j] for i in range(4) for j in range(4)]
+    try:
+        return MatrixConstant(*value)
+    except TypeError:
+        return MatrixFromScalar(*value)
 
 
 class MatrixFromScalar(Matrix):
