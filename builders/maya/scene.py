@@ -15,13 +15,8 @@ from .builder import (
 )
 
 
-@maya_builder.handler(DefaultScene)
-def _handle_default_scene(context, expression):
-    return None
-
-
-@maya_builder.handler(SceneRoot)
-def _handle_scene_root(context, expression):
+@maya_builder.handler(RootObject)
+def _handle_root_object(context, expression):
     return None
 
 
@@ -41,11 +36,6 @@ def _handle_object_parent(context, expression):
     if obj is None:
         return None
     return obj.getParent()
-
-
-@maya_builder.handler(Object.scene)
-def _handle_object_scene(context, expression):
-    return None
 
 
 @maya_builder.handler(Object.local)

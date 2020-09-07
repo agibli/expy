@@ -15,22 +15,8 @@ from .math import Boolean, Integer, Scalar, Vector, Matrix
 
 
 @abstract_expression
-class Scene(Expression):
-    @property
-    def root(self):
-        return SceneRoot(self)
-
-
-class DefaultScene(Scene): pass
-
-
-Scene.DEFAULT = DefaultScene()
-
-
-@abstract_expression
 class Object(Expression):
     parent = Output(SelfType)
-    scene = Output(Scene)
     local = Output(Transform)
     world = Output(Transform)
 
@@ -39,8 +25,10 @@ class Object(Expression):
         return ObjectFindChild(self, name, recursive)
 
 
-class SceneRoot(Object):
-    scene = Field(Scene)
+class RootObject(Object): pass
+
+
+Object.ROOT = RootObject()
 
 
 class ObjectFindChild(Object):
@@ -52,7 +40,7 @@ class ObjectFindChild(Object):
 class CreateObject(Object):
     name = Field(str)
     transform = Field(Transform, default=Transform.IDENTITY)
-    parent = Field(Object, default=Scene.DEFAULT.root)
+    parent = Field(Object, default=Object.ROOT)
 
 
 class CreateJoint(CreateObject):
