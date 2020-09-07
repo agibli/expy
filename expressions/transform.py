@@ -89,3 +89,4 @@ class ComposeTransform(Transform):
 
 
 TransformFromMatrix = cast_expression("TransformFromMatrix", Transform, Matrix)
+MatrixFromTransform = cast_expression("MatrixFromTransform", Matrix, Transform)
