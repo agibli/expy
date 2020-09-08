@@ -1,4 +1,5 @@
 from __future__ import division
+import operator
 
 from ..expression import (
     Expression,
@@ -73,7 +74,10 @@ class Integer(Expression):
         return IntegerAdd(self, other)
 
     def __radd__(self, other):
-        return expr(other) + self
+        other = expr(other)
+        if isinstance(other, Scalar):
+            return ScalarAdd(other, self)
+        return IntegerAdd(other, self)
 
     def __sub__(self, other):
         other = expr(other)
@@ -82,7 +86,10 @@ class Integer(Expression):
         return IntegerSubtract(self, other)
 
     def __rsub__(self, other):
-        return expr(other) - self
+        other = expr(other)
+        if isinstance(other, Scalar):
+            return ScalarSubtract(other, self)
+        return IntegerSubtract(other, self)
 
     def __mul__(self, other):
         other = expr(other)
@@ -95,13 +102,20 @@ class Integer(Expression):
         return IntegerMultiply(self, other)
 
     def __rmul__(self, other):
-        return expr(other) * self
+        other = expr(other)
+        if isinstance(other, Scalar):
+            return ScalarMultiply(other, self)
+        if isinstance(other, Vector):
+            return VectorMultiply(other, self)
+        elif isinstance(other, Matrix):
+            return MatrixScalarMultiply(other, self)
+        return IntegerMultiply(other, self)
 
     def __truediv__(self, other):
         return ScalarDivide(self, other)
 
     def __rtruediv__(self, other):
-        return expr(other) / self
+        return ScalarDivide(other, self)
 
     __div__ = __truediv__
     __rdiv__ = __rtruediv__
@@ -110,7 +124,7 @@ class Integer(Expression):
         return ScalarPower(self, other)
 
     def __rpow__(self, other):
-        expr(other) ** self
+        return ScalarPower(other, self)
 
     def eq(self, other):
         return IntegerEquals(self, other)
@@ -162,13 +176,13 @@ class Scalar(Expression):
         return ScalarAdd(self, other)
 
     def __radd__(self, other):
-        return expr(other) + self
+        return ScalarAdd(other, self)
 
     def __sub__(self, other):
         return ScalarSubtract(self, other)
 
     def __rsub__(self, other):
-        return expr(other) - self
+        return ScalarSubtract(other, self)
 
     def __mul__(self, other):
         other = expr(other)
@@ -179,13 +193,18 @@ class Scalar(Expression):
         return ScalarMultiply(self, other)
 
     def __rmul__(self, other):
-        return expr(other) * self
+        other = expr(other)
+        if isinstance(other, Vector):
+            return VectorMultiply(other, self)
+        elif isinstance(other, Matrix):
+            return MatrixScalarMultiply(other, self)
+        return ScalarMultiply(other, self)
 
     def __truediv__(self, other):
         return ScalarDivide(self, other)
 
     def __rtruediv__(self, other):
-        return expr(other) / self
+        return ScalarDivide(other, self)
 
     __div__ = __truediv__
     __rdiv__ = __rtruediv__
@@ -194,7 +213,7 @@ class Scalar(Expression):
         return ScalarPower(self, other)
 
     def __rpow__(self, other):
-        expr(other) ** self
+        return ScalarPower(other, self)
 
     def eq(self, other):
         return ScalarEquals(self, other)
@@ -262,7 +281,10 @@ class Vector(Expression):
         return VectorMultiply(self, other)
 
     def __rmul__(self, other):
-        return expr(other) * self
+        other = expr(other)
+        if isinstance(other, Matrix):
+            return VectorMatrixMultiply(self, other)
+        return VectorMultiply(self, other)
 
     def __truediv__(self, other):
         return VectorDivide(self, other)
@@ -367,13 +389,13 @@ class Matrix(Expression):
         return MatrixAdd(self, other)
 
     def __radd__(self, other):
-        return expr(other) + self
+        return MatrixAdd(other, self)
 
     def __sub__(self, other):
         return MatrixSubtract(self, other)
 
     def __rsub__(self, other):
-        return expr(other) - self
+        return MatrixSubtract(other, self)
 
     def __mul__(self, other):
         other = expr(other)
@@ -386,7 +408,14 @@ class Matrix(Expression):
         return NotImplemented
 
     def __rmul__(self, other):
-        return expr(other) * self
+        other = expr(other)
+        if isinstance(other, Matrix):
+            return MatrixMultiply(other, self)
+        elif isinstance(other, (Scalar, Integer)):
+            return MatrixScalarMultiply(self, other)
+        elif isinstance(other, Vector):
+            return MatrixVectorMultiply(self, other)
+        return NotImplemented
 
     def __truediv__(self, other):
         return MatrixDivide(self, other)
