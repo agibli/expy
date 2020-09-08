@@ -203,7 +203,7 @@ class TestMathTypes(unittest.TestCase):
 
         self.assertIsInstance(-s, Scalar)
 
-    def test_vector_identities(self):
+    def test_vector_type_identities(self):
         b = BooleanVar('b')
         i = IntegerVar('i')
         s = ScalarVar('s')
@@ -237,7 +237,7 @@ class TestMathTypes(unittest.TestCase):
 
         self.assertIsInstance(-v, Vector)
 
-    def test_matrix_identities(self):
+    def test_matrix_type_identities(self):
         b = BooleanVar('b')
         i = IntegerVar('i')
         s = ScalarVar('s')
