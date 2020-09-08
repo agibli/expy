@@ -330,8 +330,8 @@ def vector(*args):
     return type_conversions.convert(Vector, args)
 
 
-@type_conversions.conversion(Scalar, tuple)
-@type_conversions.conversion(Scalar, list)
+@type_conversions.conversion(Vector, tuple)
+@type_conversions.conversion(Vector, list)
 def _vector_from_args(value):
     try:
         return VectorConstant(*value)
