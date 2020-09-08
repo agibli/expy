@@ -385,6 +385,9 @@ VectorNormalize = unary_expression("VectorNormalize", Vector)
 @abstract_expression
 class Matrix(Expression):
 
+    def __neg__(self):
+        return self * -1
+
     def __add__(self, other):
         return MatrixAdd(self, other)
 
@@ -401,21 +404,17 @@ class Matrix(Expression):
         other = expr(other)
         if isinstance(other, Matrix):
             return MatrixMultiply(self, other)
-        elif isinstance(other, (Scalar, Integer)):
-            return MatrixScalarMultiply(self, other)
         elif isinstance(other, Vector):
             return MatrixVectorMultiply(self, other)
-        return NotImplemented
+        return MatrixScalarMultiply(self, other)
 
     def __rmul__(self, other):
         other = expr(other)
         if isinstance(other, Matrix):
             return MatrixMultiply(other, self)
-        elif isinstance(other, (Scalar, Integer)):
-            return MatrixScalarMultiply(self, other)
         elif isinstance(other, Vector):
             return MatrixVectorMultiply(self, other)
-        return NotImplemented
+        return MatrixScalarMultiply(self, other)
 
     def __truediv__(self, other):
         return MatrixDivide(self, other)
