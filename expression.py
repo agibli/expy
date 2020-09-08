@@ -55,8 +55,19 @@ class Output(object):
     def __init__(self, type):
         self.type = type
         self.name = None
-        self.expression_type = None
+        self._self_type = None
+        self._expression_type = None
         self._sort_order = next(Field._sort_order_count)
+
+    @property
+    def expression_type(self):
+        if self._expression_type is None:
+            output_class_name = "{}.{}".format(self._self_type.__name__, self.name)
+            output_class_attrs = { "self": Field(self._self_type) }
+            self._expression_type = _expression_type(
+                output_class_name, self.type, output_class_attrs,
+            )
+        return self._expression_type
 
     def index(self, expression_type):
         if not isinstance(expression_type, type):
@@ -90,13 +101,13 @@ class ExpressionMeta(type):
         new_fields = []
         new_outputs = []
         for k, v in attrs.items():
-            if isinstance(v, (Field, Output)):
+            if isinstance(v, Field):
                 v.name = k
                 v.display_name = v.display_name or v.name
-                if isinstance(v, Field):
-                    new_fields.append(v)
-                if isinstance(v, Output):
-                    new_outputs.append(v)
+                new_fields.append(v)
+            if isinstance(v, Output):
+                v.name = k
+                new_outputs.append(v)
 
         new_fields.sort(key=lambda f: f._sort_order)
         new_outputs.sort(key=lambda f: f._sort_order)
@@ -117,14 +128,10 @@ class ExpressionMeta(type):
         attrs.setdefault("__isabstractexpression__", False)
 
         result = type.__new__(cls, name, bases, attrs)
-        for output in outputs:
+        for output in new_outputs:
+            output._self_type = result
             if output.type is SelfType:
                 output.type = result
-            output_class_name = "{}.{}".format(name, output.name)
-            output_class_attrs = { "self": result }
-            output.expression_type = _expression_type(
-                output_class_name, output.type, output_class_attrs,
-            )
         return result
 
 
