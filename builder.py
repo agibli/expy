@@ -71,5 +71,5 @@ class PipelineContext(BuildContextBase):
     def _build(self, expression):
         result = expression
         for stage in self.stages:
-            result = stage.get(expression)
+            result = stage.get(result)
         return result
