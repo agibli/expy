@@ -62,8 +62,13 @@ class Output(object):
     @property
     def expression_type(self):
         if self._expression_type is None:
+            def __repr__(self_):
+                return "{!r}.{}".format(self_.self, self.name)
             output_class_name = "{}.{}".format(self._self_type.__name__, self.name)
-            output_class_attrs = { "self": Field(self._self_type) }
+            output_class_attrs = {
+                "self": Field(self._self_type),
+                "__repr__": __repr__,
+            }
             self._expression_type = _expression_type(
                 output_class_name, self.type, output_class_attrs,
             )
