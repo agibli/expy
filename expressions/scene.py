@@ -10,7 +10,7 @@ from ..expression import (
     binary_expression,
     _expression_type,
 )
-from .transform import Transform
+from .transform import Transform, Rotation, transform
 from .math import Boolean, Integer, Scalar, Vector, Matrix
 
 
@@ -43,9 +43,39 @@ class CreateObject(Object):
     parent = Field(Object, default=Object.ROOT)
 
 
-class CreateJoint(CreateObject):
+def null(name, parent=Object.ROOT, **transform_kwargs):
+    return CreateObject(
+        name=name,
+        parent=parent or Object.ROOT,
+        transform=transform(**transform_kwargs),
+    )
+
+
+class Joint(Object): pass
+
+
+class CreateJoint(Joint):
+    name = Field(str)
+    transform = Field(Transform, default=Transform.IDENTITY)
+    parent = Field(Object, default=Object.ROOT)
     orient = Field(Rotation, default=Rotation.IDENTITY)
     display_scale = Field(Scalar, default=1.0)
+
+
+def joint(
+    name,
+    parent=Object.ROOT,
+    orient=Rotation.IDENTITY,
+    display_scale=1.0,
+    **transform_kwargs,
+):
+    return CreateJoint(
+        name=name,
+        parent=parent or Object.ROOT,
+        orient=orient or Rotation.IDENTITY,
+        display_scale=display_scale,
+        transform=transform(**transform_kwargs),
+    )
 
 
 def attribute_expression(name, attribute_type):

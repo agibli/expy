@@ -2,9 +2,11 @@ from __future__ import absolute_import
 
 from enum import Enum
 
+from .. import type_conversions
 from ..expression import (
     Expression,
     Field,
+    Output,
     abstract_expression,
     unary_expression,
     binary_expression,
@@ -52,17 +54,44 @@ class EulerRotation(Rotation):
     order = Field(RotateOrder, default=RotateOrder.XYZ)
 
 
+@type_conversions.conversion(EulerRotation, Vector)
+def _euler_from_vector(value):
+    return EulerRotation(x=value.x, y=yvalue.y, z=value.z)
+
+
+def euler(*args, **kwargs):
+    if len(args) == 1 and not kwargs:
+        return type_conversions.convert(EulerRotation, args[0])
+    return EulerRotation(*args, **kwargs)
+
+
 @abstract_expression
 class Transform(Expression):
     translation = Output(Vector)
     rotation = Output(Rotation)
     scale = Output(Vector)
 
+    @property
+    def matrix(self):
+        return MatrixFromTransform(self)
+
     def local_to_world(self, parent):
         return LocalToWorldTransform(parent, self)
 
     def world_to_local(self, parent):
         return WorldToLocalTransform(parent, self)
+
+
+def transform(arg=None, **kwargs):
+    transform_ = kwargs.pop("transform", arg)
+    if transform_ is not None:
+        return type_conversions.convert(Transform, transform_)
+    translation = kwargs.pop("translation", Vector.ZERO)
+    rotation = kwargs.pop("rotation", Rotation.IDENTITY)
+    scale = kwargs.pop("scale", Vector.ONES)
+    return ComposeTransform(
+        translation=translation, rotation=rotation, scale=scale,
+    )
 
 
 class WorldToLocalTransform(Transform):
