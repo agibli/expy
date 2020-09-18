@@ -5,14 +5,23 @@ import pymel.core.nodetypes as nt
 from ...expressions.scene import *
 from ...expressions.transform import *
 
+from .expressions import MayaObject
 from .builder import (
     maya_builder,
     ValueResult,
     AttributeResult,
+    WorldMatrixAttributeResult,
     CompoundResult,
     TransformResult,
+    ObjectLocalTransformResult,
+    MatrixTransformResult,
     EulerRotationResult,
 )
+
+
+@maya_builder.handler(MayaObject)
+def _handle_maya_object(context, expression):
+    return expression.value
 
 
 @maya_builder.handler(RootObject)
@@ -32,7 +41,7 @@ def _handle_create_object(context, expression):
 
 @maya_builder.handler(Object.parent)
 def _handle_object_parent(context, expression):
-    obj = context.get(expression)
+    obj = context.get(expression.self)
     if obj is None:
         return None
     return obj.getParent()
@@ -40,14 +49,15 @@ def _handle_object_parent(context, expression):
 
 @maya_builder.handler(Object.local)
 def _handle_object_local_transform(context, expression):
-    obj = context.get(expression.operand)
+    obj = context.get(expression.self)
     if obj is None:
         return context.get(Transform.IDENTITY)
-    return TransformResult(
-        translation=AttributeResult(obj.translate),
-        rotation=EulerRotationResult(
-            angles=AttributeResult(obj.rotate),
-            order=AttributeResult(obj.rotateOrder),
-        ),
-        scale=AttributeResult(obj.scale),
-    )
+    return ObjectLocalTransformResult(obj)
+
+
+@maya_builder.handler(Object.world)
+def _handle_object_world_transform(context, expression):
+    obj = context.get(expression.self)
+    if obj is None:
+        return context.get(Transform.IDENTITY)
+    return MatrixTransformResult(WorldMatrixAttributeResult(obj))

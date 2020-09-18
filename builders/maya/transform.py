@@ -10,6 +10,7 @@ from .builder import (
     AttributeResult,
     CompoundResult,
     TransformResult,
+    MatrixTransformResult,
     EulerRotationResult,
 )
 from .expressions import (
@@ -70,15 +71,37 @@ def _handle_compose_transform(context, expression):
 
 @maya_builder.handler(Transform.translation)
 def _handle_transform_translation(context, expression):
-    return context.get(expression.operand).translation
+    return context.get(expression.self).translation
 
 
 @maya_builder.handler(Transform.rotation)
 def _handle_transform_rotation(context, expression):
-    return context.get(expression.operand).rotation
+    return context.get(expression.self).rotation
 
 
 @maya_builder.handler(Transform.scale)
 def _handle_transform_scale(context, expression):
-    return context.get(expression.operand).scale
+    return context.get(expression.self).scale
 
+
+@maya_builder.handler(MatrixFromTransform)
+def _handle_matrix_from_transform(context, expression):
+    transform_result = context.get(expression.value)
+    try:
+        return transform_result.matrix
+    except AttributeError:
+        cmds.loadPlugin("matrixNodes", quiet=True)
+        compose = pm.createNode("composeMatrix")
+        transform_result.translation.assign(compose.inputTranslate)
+        transform_result.rotation.assign_compose_matrix(compose)
+        transform_result.scale.assign(compose.inputScale)
+        return AttributeResult(compose.outputMatrix)
+
+
+@maya_builder.handler(TransformFromMatrix)
+def _handle_transform_from_matrix(context, expression):
+    matrix_result = context.get(expression.value)
+    try:
+        return matrix_result.decompose
+    except AttributeError:
+        return MatrixTransformResult(matrix_result)

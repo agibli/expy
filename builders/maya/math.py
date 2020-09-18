@@ -277,10 +277,14 @@ def _handle_scalar_to_matrix(context, expression):
 
 @maya_builder.handler(MatrixInverse)
 def _handle_matrix_inverse(context, expression):
-    pm.loadPlugin("matrixNodes", quiet=True)
-    inverse_node = pm.createNode("inverseMatrix")
-    context.get(expression.operand).assign(inverse_node.inputMatrix)
-    return AttributeResult(inverse_nodeMatrix)
+    matrix = context.get(expression.operand)
+    try:
+        return matrix.inverse
+    except AttributeError:
+        pm.loadPlugin("matrixNodes", quiet=True)
+        inverse_node = pm.createNode("inverseMatrix")
+        matrix.assign(inverse_node.inputMatrix)
+        return AttributeResult(inverse_nodeMatrix)
 
 
 @maya_builder.handler(MatrixTranspose)
@@ -307,3 +311,11 @@ def _handle_vector_matrix_multiply(context, expression):
     context.get(expression.matrix).assign(mult_node.inMatrix)
     mult_node.vectorMultiply.set(True)
     return AttributeResult(mult_node.output)
+
+
+@maya_builder.handler(MatrixMultiply)
+def _handle_matrix_multiply(context, expression):
+    mult_node = pm.createNode("multMatrix")
+    context.get(expression.loperand).assign(mult_node.matrixIn[0])
+    context.get(expression.roperand).assign(mult_node.matrixIn[1])
+    return AttributeResult(mult_node.matrixSum)

@@ -25,6 +25,7 @@ from ...expressions.math import (
     Matrix,
     MatrixConstant,
 )
+from ...expressions.scene import Object
 from ... import type_conversions
 
 
@@ -126,3 +127,6 @@ def _convert_vector_constant(value):
 @type_conversions.conversion(MatrixConstant, dt.Matrix)
 def _convert_vector_constant(value):
     return MatrixConstant(*(a for row in value for a in row))
+
+
+MayaObject = cast_expression("MayaObject", Object, nt.Transform)
