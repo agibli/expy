@@ -4,7 +4,7 @@ import unittest
 
 from expy import type_conversions
 from expy.expressions.math import *
-from expy.builders.constant_folding import constant_folding
+from expy.contexts.constant_folding import ConstantFoldingContext
 
 
 def _var_type(name, base):
@@ -50,7 +50,7 @@ class TestConstantFolding(unittest.TestCase):
         S2B = BooleanFromScalar
         I2B = BooleanFromInteger
 
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
 
         # Constant conversions
         self.assertEqual(ctx.get(I2S(I(1))), S(1.0))
@@ -92,7 +92,7 @@ class TestConstantFolding(unittest.TestCase):
 
     def test_boolean_operations(self):
         B = BooleanConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self.assertEqual(ctx.get(B(True) & B(True)), B(True))
         self.assertEqual(ctx.get(B(True) & B(False)), B(False))
         self.assertEqual(ctx.get(B(False) & B(True)), B(False))
@@ -115,7 +115,7 @@ class TestConstantFolding(unittest.TestCase):
     def test_boolean_short_circuit(self):
         B = BooleanConstant
         S = ScalarConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         zero_div = (S(1) / S(0)).eq(S(0))
         self.assertEqual(ctx.get(B(False) & zero_div), B(False))
         self.assertRaises(ZeroDivisionError, lambda: ctx.get(zero_div & B(False)))
@@ -125,7 +125,7 @@ class TestConstantFolding(unittest.TestCase):
     def test_integer_operations(self):
         I = IntegerConstant
         S = ScalarConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self.assertEqual(ctx.get(I(2) + I(3)), I(5))
         self.assertEqual(ctx.get(I(2) + S(3.5)), S(5.5))
         self.assertEqual(ctx.get(S(3.5) + I(2)), S(5.5))
@@ -145,7 +145,7 @@ class TestConstantFolding(unittest.TestCase):
 
     def test_scalar_operations(self):
         S = ScalarConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self._assert_scalar_equal(ctx.get(S(1.23) + S(4.56)), S(5.79))
         self._assert_scalar_equal(ctx.get(S(1.23) - S(6.54)), S(-5.31))
         self._assert_scalar_equal(ctx.get(S(1.23) * S(-2.4)), S(-2.952))
@@ -157,7 +157,7 @@ class TestConstantFolding(unittest.TestCase):
     def _test_comparison_operations(self, constant_type):
         C = constant_type
         B = BooleanConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self.assertEqual(ctx.get(C(1).eq(C(1))), B(True))
         self.assertEqual(ctx.get(C(1) >= C(1)), B(True))
         self.assertEqual(ctx.get(C(2) >= C(1)), B(True))
@@ -180,7 +180,7 @@ class TestConstantFolding(unittest.TestCase):
         T = type_conversions.constructor(base)
         C = constant_type
         B = BooleanConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
 
         # Identity a + 0 = a, 0 + a = a
         self.assertEqual(ctx.get(a + C(0)), a)
@@ -226,7 +226,7 @@ class TestConstantFolding(unittest.TestCase):
     def test_vector_operations(self):
         S = ScalarConstant
         V = VectorConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self._assert_vector_equal(ctx.get(V(0,1,2) + V(3,4,5)), V(3,5,7))
         self._assert_vector_equal(ctx.get(V(0,1,2) - V(5,4,3)), V(-5,-3,-1))
         self._assert_vector_equal(ctx.get(V(1,2,3) * S(2)), V(2,4,6))
@@ -249,7 +249,7 @@ class TestConstantFolding(unittest.TestCase):
         j = ScalarVar('j')
         k = ScalarVar('k')
     
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
 
         # Composition / component access
         self.assertEqual(ctx.get(S2V(S(0), S(1), S(2))), V(0, 1, 2))
@@ -327,7 +327,7 @@ class TestConstantFolding(unittest.TestCase):
         v = V(4.4925060373, 3.54494750813, 2.96842936979)
         s = S(7.215897398019421)
 
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         self._assert_matrix_equal(ctx.get(m1 * s), M(
             -10.6479873832, 55.8432715285, -4.59436327236, -52.4964611424,
             -65.945748885, 55.8203154839, 7.0253351879, 21.7509294654,
@@ -385,7 +385,7 @@ class TestConstantFolding(unittest.TestCase):
         zero = Matrix.ZERO
         ident = Matrix.IDENTITY
 
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
 
         # Composition / component access
         s2m = S2M(*(
@@ -450,7 +450,7 @@ class TestConstantFolding(unittest.TestCase):
 
     def test_examples(self):
         S = ScalarConstant
-        ctx = constant_folding.context()
+        ctx = ConstantFoldingContext()
         example1 = (S(1) + S(2))*(S(7)**S(2) - S(4)/S(3))
         self._assert_scalar_equal(ctx.get(example1), S(143.0))
 

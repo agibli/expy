@@ -4,7 +4,6 @@ import unittest
 
 from expy import type_conversions
 from expy.expressions.math import *
-from expy.builders.constant_folding import constant_folding
 
 
 def _var_type(name, base):

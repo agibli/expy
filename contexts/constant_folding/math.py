@@ -5,7 +5,7 @@ import operator
 import functools
 
 from ...expressions.math import *
-from .builder import constant_folding
+from .context import constant_folding
 
 
 def _handle_unary_op(constant_type, func, context, expression):

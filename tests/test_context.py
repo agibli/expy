@@ -37,29 +37,6 @@ class TestBuilder(unittest.TestCase):
         ctx.get(A())
         self.assertEqual(count[0], 1)
 
-    def test_pipeline(self):
-        class In(Expression): pass
-        class Tmp1(Expression): pass
-        class Tmp2(Expression): pass
-        class Out(Expression): pass
-
-        stage1 = Builder()
-        stage2part1 = Builder()
-        stage2part2 = Builder()
-
-        stage1.register_handler(In, lambda ctx,expr: Tmp1())
-        stage2part1.register_handler(Tmp1, lambda ctx,expr: Tmp2())
-        stage2part2.register_handler(Tmp2, lambda ctx,expr: Out())
-
-        ctx = PipelineContext([
-            stage1.context(),
-            PipelineContext([
-                stage2part1.context(),
-                stage2part2.context()
-            ])
-        ])
-        self.assertEqual(ctx.get(In()), Out())
-
 
 if __name__ == '__main__':
     unittest.main()

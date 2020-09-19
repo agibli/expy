@@ -6,7 +6,7 @@ import pymel.core.nodetypes as nt
 
 from ...expressions.math import *
 
-from .builder import (
+from .context import (
     maya_builder,
     ValueResult,
     AttributeResult,

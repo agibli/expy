@@ -6,7 +6,7 @@ from ...expressions.scene import *
 from ...expressions.transform import *
 
 from .expressions import MayaObject
-from .builder import (
+from .context import (
     maya_builder,
     ValueResult,
     AttributeResult,

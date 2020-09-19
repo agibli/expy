@@ -1,10 +1,19 @@
 import pymel.core as pm
 import pymel.core.datatypes as dt
 
-from ...builder import Builder
+from ...contexts.constant_folding import ConstantFoldingContext
+from ...context import Context, ContextHandler
 
 
-maya_builder = Builder()
+maya_builder = ContextHandler()
+
+
+class MayaBuildContext(Context):
+    def __init__(self):
+        super(MayaBuildContext, self).__init__(
+            handler=maya_builder,
+            parent=ConstantFoldingContext(),
+        )
 
 
 class ValueResult(object):

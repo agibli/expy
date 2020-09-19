@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from .builder import maya_builder
+from .context import MayaBuildContext
 from . import (
     math as _math,
     transform as _transform,
