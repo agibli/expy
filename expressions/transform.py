@@ -82,6 +82,16 @@ class Transform(Expression):
         return WorldToLocalTransform(parent, self)
 
 
+class LocalToWorldTransform(Transform):
+    local = Field(Transform)
+    parent = Field(Transform)
+
+
+class WorldToLocalTransform(Transform):
+    world = Field(Transform)
+    parent = Field(Transform)
+
+
 def transform(arg=None, **kwargs):
     transform_ = kwargs.pop("transform", arg)
     if transform_ is not None:

@@ -76,6 +76,10 @@ class WorldMatrixAttributeResult(AttributeResult):
             self.transform, inverse=not self.is_inverse,
         )
 
+    @property
+    def decompose(self):
+        return ObjectWorldTransformResult(self.transform)
+
 
 class CompoundResult(object):
     def __init__(self, *children):
@@ -108,6 +112,9 @@ class TransformResult(object):
         self.rotation.assign_transform(transform)
         self.scale.assign(transform.scale)
 
+    def is_world_transform_of(self, transform):
+        return False
+
 
 class ObjectLocalTransformResult(TransformResult):
     def __init__(self, transform):
@@ -124,6 +131,11 @@ class ObjectLocalTransformResult(TransformResult):
     @property
     def matrix(self):
         return LocalMatrixAttributeResult(self.transform)
+
+    def to_world(self, other):
+        if other.is_world_transform_of(self.transform.parent()):
+            return ObjectWorldTransformResult(self.transform)
+        raise NotImplementedError
 
 
 class MatrixTransformResult(object):
@@ -162,6 +174,21 @@ class MatrixTransformResult(object):
                 scale=AttributeResult(decompose.outputScale),
             )
         return self._decompose_result
+
+
+class ObjectWorldTransformResult(MatrixTransformResult):
+    def __init__(self, transform, rotate_order=None):
+        rotate_order = rotate_order or AttributeResult(transform.rotateOrder)
+        matrix = WorldMatrixAttributeResult(transform)
+        super(ObjectWorldTransformResult, self).__init__(matrix, rotate_order)
+    
+    def is_world_transform_of(self, transform):
+        return self.transform == transform
+
+    def to_local(self, other):
+        if other.is_world_transform_of(self.transform.parent()):
+            return ObjectLocalTransformResult(self.transform)
+        raise NotImplementedError
 
 
 class EulerRotationResult(object):

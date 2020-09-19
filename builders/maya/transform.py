@@ -84,6 +84,26 @@ def _handle_transform_scale(context, expression):
     return context.get(expression.self).scale
 
 
+@maya_builder.handler(LocalToWorldTransform)
+def _handle_local_to_world_transform(context, expression):
+    transform = context.get(expression.transform)
+    parent = context.get(expression.parent)
+    try:
+        return transform.to_world(parent)
+    except NotImplementedError:
+        return ctx.get(matrix(transform) * matrix(parent))
+
+
+@maya_builder.handler(WorldToLocalTransform)
+def _handle_world_to_local_transform(context, expression):
+    transform = context.get(expression.transform)
+    parent = context.get(expression.parent)
+    try:
+        return transform.to_world(parent)
+    except NotImplementedError:
+        return ctx.get(matrix(transform) * matrix(parent).inverse())
+
+
 @maya_builder.handler(MatrixFromTransform)
 def _handle_matrix_from_transform(context, expression):
     transform_result = context.get(expression.value)

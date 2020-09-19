@@ -60,4 +60,4 @@ def _handle_object_world_transform(context, expression):
     obj = context.get(expression.self)
     if obj is None:
         return context.get(Transform.IDENTITY)
-    return MatrixTransformResult(WorldMatrixAttributeResult(obj))
+    return ObjectWorldTransformResult(obj)
