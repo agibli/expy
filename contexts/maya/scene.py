@@ -14,6 +14,7 @@ from .context import (
     CompoundResult,
     TransformResult,
     ObjectLocalTransformResult,
+    ObjectWorldTransformResult,
     MatrixTransformResult,
     EulerRotationResult,
 )

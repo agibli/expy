@@ -110,7 +110,7 @@ def _handle_matrix_from_transform(context, expression):
     try:
         return transform_result.matrix
     except AttributeError:
-        cmds.loadPlugin("matrixNodes", quiet=True)
+        pm.loadPlugin("matrixNodes", quiet=True)
         compose = pm.createNode("composeMatrix")
         transform_result.translation.assign(compose.inputTranslate)
         transform_result.rotation.assign_compose_matrix(compose)
