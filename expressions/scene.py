@@ -67,7 +67,7 @@ def joint(
     parent=Object.ROOT,
     orient=Rotation.IDENTITY,
     display_scale=1.0,
-    **transform_kwargs,
+    **transform_kwargs
 ):
     return CreateJoint(
         name=name,
