@@ -42,8 +42,15 @@ class TestConstantFoldingTransform(unittest.TestCase):
         self.assertEqual(ctx.get(T.local_to_world(P).world_to_local(P)), T)
         self.assertEqual(ctx.get(T.world_to_local(P).local_to_world(P)), T)
 
+        self.assertEqual(ctx.get(T.local_to_world(Transform.IDENTITY)), T)
+        self.assertEqual(ctx.get(T.world_to_local(Transform.IDENTITY)), T)
+        self.assertEqual(ctx.get(Transform.IDENTITY.local_to_world(T)), T)
+        self.assertEqual(ctx.get(Transform.IDENTITY.world_to_local(T)), T)
+
         self.assertEqual(ctx.get(TransformFromMatrix(MatrixFromTransform(T))), T)
         self.assertEqual(ctx.get(MatrixFromTransform(TransformFromMatrix(M))), M)
+
+
 
     def test_transform_composition(self):
         ctx = ConstantFoldingContext()

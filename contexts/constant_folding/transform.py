@@ -214,9 +214,9 @@ def _handle_transform_scale(context, expression):
 def _handle_local_to_world_transform(context, expression):
     local = context.get(expression.transform)
     parent = context.get(expression.parent)
-    if local == Matrix.IDENTITY:
+    if local == Transform.IDENTITY:
         return parent
-    if parent == Matrix.IDENTITY:
+    if parent == Transform.IDENTITY:
         return local
     if isinstance(local, WorldToLocalTransform) and local.parent == parent:
         return local.transform
@@ -227,9 +227,9 @@ def _handle_local_to_world_transform(context, expression):
 def _handle_world_to_local_transform(context, expression):
     world = context.get(expression.transform)
     parent = context.get(expression.parent)
-    if world == Matrix.IDENTITY:
+    if world == Transform.IDENTITY:
         return parent
-    if parent == Matrix.IDENTITY:
+    if parent == Transform.IDENTITY:
         return world
     if isinstance(world, LocalToWorldTransform) and world.parent == parent:
         return world.transform
