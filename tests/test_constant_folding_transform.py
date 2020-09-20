@@ -106,6 +106,22 @@ class TestConstantFoldingTransform(unittest.TestCase):
             )
         )
 
+    def test_transform_decomposition(self):
+        ctx = ConstantFoldingContext()
+        M = MatrixConstant(
+            0.813797681349, 0.469846310393, -0.342020143326, 0.0,
+            -0.23090107598, 2.14100528683, 0.0527357076725, 0.0,
+            -1.56251814218, -2.34746981397, -2.55693616031, 0.0,
+            10.0, 20.0, 30.0, 1.0,
+        )
+        T = TransformFromMatrix(M)
+        self._assert_const_almost_equal(
+            ctx.get(T.translation), VectorConstant(10, 20, 30),
+        )
+        self._assert_const_almost_equal(
+            ctx.get(T.scale), VectorConstant(1, 2, -3),
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

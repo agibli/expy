@@ -103,6 +103,70 @@ def _scale_matrix(x, y, z):
     )
 
 
+def _decompose_translation(m):
+    translation = VectorConstant(m.a30, m.a31, m.a32)
+    linear = MatrixConstant(
+        m.a00, m.a01, m.a02, 0,
+        m.a10, m.a11, m.a12, 0,
+        m.a20, m.a21, m.a22, 0,
+        0, 0, 0, 1,
+    )
+    return translation, linear
+
+
+def _unskew(m):
+    ctx = ConstantFoldingContext()
+    i = VectorConstant(m.a00, m.a01, m.a02)
+    j = VectorConstant(m.a10, m.a11, m.a12)
+    k = VectorConstant(m.a20, m.a21, m.a22)
+
+    j_proj_i = ctx.get(i * j.dot(i) / i.dot(i))
+    j_ortho = ctx.get(j - j_proj_i)
+
+    k_proj_i = ctx.get(i * k.dot(i) / i.dot(i))
+    k_ortho_i = ctx.get(k - k_proj_i)
+
+    k_proj_j = ctx.get(j_ortho * k_ortho_i.dot(j_ortho) / j_ortho.dot(j_ortho))
+    k_ortho = ctx.get(k_ortho_i - k_proj_j)
+
+    return MatrixConstant(
+        i.xvalue, i.yvalue, i.zvalue, 0,
+        j_ortho.xvalue, j_ortho.yvalue, j_ortho.zvalue, 0,
+        k_ortho.xvalue, k_ortho.yvalue, k_ortho.zvalue, 0,
+        m.a30, m.a31, m.a32, 1,
+    )
+
+
+def _decompose_scale(m):
+    i = VectorConstant(m.a00, m.a01, m.a02)
+    j = VectorConstant(m.a10, m.a11, m.a12)
+    k = VectorConstant(m.a20, m.a21, m.a22)
+    det = (
+        m.a00 * m.a11 * m.a22 - m.a00 * m.a12 * m.a21
+        - m.a01 * m.a10 * m.a22 + m.a01 * m.a12 * m.a20
+        + m.a02 * m.a10 * m.a21 - m.a02 * m.a11 * m.a20
+    )
+    sign = 1 if det >= 0 else -1
+
+    scale = VectorConstant(
+        math.sqrt(m.a00 * m.a00 + m.a01 * m.a01 + m.a02 * m.a02),
+        math.sqrt(m.a10 * m.a10 + m.a11 * m.a11 + m.a12 * m.a12),
+        math.sqrt(m.a20 * m.a20 + m.a21 * m.a21 + m.a22 * m.a22) * sign,
+    )
+
+    x_inv = 1.0 / scale.xvalue if scale.xvalue else 1.0
+    y_inv = 1.0 / scale.yvalue if scale.yvalue else 1.0
+    z_inv = 1.0 / scale.zvalue if scale.zvalue else 1.0
+
+    unit = MatrixConstant(
+        m.a00 * x_inv, m.a01 * x_inv, m.a02 * x_inv, 0.0,
+        m.a10 * y_inv, m.a11 * y_inv, m.a12 * y_inv, 0.0,
+        m.a20 * z_inv, m.a21 * z_inv, m.a22 * z_inv, 0.0,
+        m.a30, m.a31, m.a32, 1.0,
+    )
+    return scale, unit
+
+
 @constant_folding.handler(EulerRotation)
 def _handle_euler_rotation(context, expression):
     x = context.get(expression.x)
@@ -119,7 +183,14 @@ def _handle_euler_rotation(context, expression):
 
 @constant_folding.handler(Transform.translation)
 def _handle_transform_translation(context, expression):
-    return context.get(expression.self).translation
+    transform = context.get(expression.self)
+    if (
+        isinstance(transform, TransformFromMatrix)
+        and isinstance(transform.value, MatrixConstant)
+    ):
+        translation, rest = _decompose_translation(transform.value)
+        return translation
+    return transform.translation
 
 
 @constant_folding.handler(Transform.rotation)
@@ -129,6 +200,13 @@ def _handle_transform_rotation(context, expression):
 
 @constant_folding.handler(Transform.scale)
 def _handle_transform_scale(context, expression):
+    transform = context.get(expression.self)
+    if (
+        isinstance(transform, TransformFromMatrix)
+        and isinstance(transform.value, MatrixConstant)
+    ):
+        scale, rest = _decompose_scale(_unskew(transform.value))
+        return scale
     return context.get(expression.self).scale
 
 
