@@ -111,15 +111,17 @@ class CompoundResult(object):
 
 
 class TransformResult(object):
-    def __init__(self, translation, rotation, scale):
+    def __init__(self, translation, rotation, scale, shear=ValueResult(dt.Vector())):
         self.translation = translation
         self.rotation = rotation
         self.scale = scale
+        self.shear = shear
 
     def assign_transform(self, transform):
         self.translation.assign(transform.translate)
         self.rotation.assign_transform(transform)
         self.scale.assign(transform.scale)
+        self.shear.assign(transform.shear)
 
     def is_world_transform_of(self, transform):
         return False
@@ -140,6 +142,7 @@ class ObjectLocalTransformResult(TransformResult):
                 order=AttributeResult(transform.rotateOrder),
             ),
             scale=AttributeResult(transform.scale),
+            shear=AttributeResult(transform.shear),
         )
         self.transform = transform
 
@@ -199,6 +202,7 @@ class MatrixTransformResult(object):
                     order=AttributeResult(decompose.inputRotateOrder),
                 ),
                 scale=AttributeResult(decompose.outputScale),
+                shear=AttributeResult(decompose.outputShear),
             )
         return self._decompose_result
 
