@@ -284,7 +284,7 @@ def _handle_matrix_inverse(context, expression):
         pm.loadPlugin("matrixNodes", quiet=True)
         inverse_node = pm.createNode("inverseMatrix")
         matrix.assign(inverse_node.inputMatrix)
-        return AttributeResult(inverse_nodeMatrix)
+        return AttributeResult(inverse_node.outputMatrix)
 
 
 @maya_builder.handler(MatrixTranspose)
