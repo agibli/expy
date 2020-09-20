@@ -36,6 +36,17 @@ class RotateOrder(Enum):
     YZX = "YZX"
     ZXY = "ZXY"
 
+    @staticmethod
+    def sort(x, y, z, order):
+        return {
+            RotateOrder.XYZ: (x, y, z),
+            RotateOrder.YXZ: (y, x, z),
+            RotateOrder.XZY: (x, z, y),
+            RotateOrder.ZYX: (z, y, x),
+            RotateOrder.YZX: (y, z, x),
+            RotateOrder.ZXY: (z, x, y),
+        }[order]
+
 
 @abstract_expression
 class Rotation(Expression):
@@ -80,16 +91,6 @@ class Transform(Expression):
 
     def world_to_local(self, parent):
         return WorldToLocalTransform(parent, self)
-
-
-class LocalToWorldTransform(Transform):
-    local = Field(Transform)
-    parent = Field(Transform)
-
-
-class WorldToLocalTransform(Transform):
-    world = Field(Transform)
-    parent = Field(Transform)
 
 
 def transform(arg=None, **kwargs):

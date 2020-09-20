@@ -17,7 +17,7 @@ VectorVar = _var_type("VectorVar", Vector)
 MatrixVar = _var_type("MatrixVar", Matrix)
 
 
-class TestConstantFolding(unittest.TestCase):
+class TestConstantFoldingMath(unittest.TestCase):
 
     def _assert_scalar_equal(self, const, value):
         self.assertIsInstance(const, ScalarConstant)

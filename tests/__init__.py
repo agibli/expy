@@ -9,7 +9,8 @@ except ImportError:
 from .test_expression import *
 from .test_builder import *
 from .test_math_expressions import *
-from .test_constant_folding import *
+from .test_constant_folding_math import *
+from .test_constant_folding_transform import *
 
 if include_maya_tests:
     from .maya import *
