@@ -129,4 +129,16 @@ def _convert_vector_constant(value):
     return MatrixConstant(*(a for row in value for a in row))
 
 
-MayaObject = cast_expression("MayaObject", Object, nt.Transform)
+class MayaObject(Object):
+    value = Field(nt.Transform)
+
+    @property
+    def parent(self):
+        parent = self.value.getParent()
+        if not parent:
+            return Object.ROOT
+        return MayaObject(parent)
+
+
+type_conversions.register_conversion(MayaObject, nt.Transform)
+type_conversions.register_conversion(nt.Transform, MayaObject, lambda c: c.value)
