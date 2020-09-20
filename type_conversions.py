@@ -90,7 +90,7 @@ class TypeConversions(object):
                 path = None
             self._path_cache[(to_type, from_type)] = path
         if path is None:
-            raise TypeError("Cannot convert type")
+            raise TypeError("Cannot convert to {} from {}".format(to_type, from_type))
         return path
 
 
