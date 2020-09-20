@@ -2,6 +2,7 @@ import pymel.core as pm
 import pymel.core.datatypes as dt
 import pymel.core.nodetypes as nt
 
+from ...expressions.math import *
 from ...expressions.transform import *
 
 from .context import (
@@ -91,7 +92,11 @@ def _handle_local_to_world_transform(context, expression):
     try:
         return transform.to_world(parent)
     except NotImplementedError:
-        return ctx.get(matrix(transform) * matrix(parent))
+        return MatrixTransformResult(
+            context.get(
+                matrix(expression.transform) * matrix(expression.parent)
+            )
+        )
 
 
 @maya_builder.handler(WorldToLocalTransform)
@@ -99,9 +104,13 @@ def _handle_world_to_local_transform(context, expression):
     transform = context.get(expression.transform)
     parent = context.get(expression.parent)
     try:
-        return transform.to_world(parent)
+        return transform.to_local(parent)
     except NotImplementedError:
-        return ctx.get(matrix(transform) * matrix(parent).inverse())
+        return MatrixTransformResult(
+            context.get(
+                matrix(expression.transform) * matrix(expression.parent).inverse()
+            )
+        )
 
 
 @maya_builder.handler(MatrixFromTransform)

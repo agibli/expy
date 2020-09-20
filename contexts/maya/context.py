@@ -124,6 +124,12 @@ class TransformResult(object):
     def is_world_transform_of(self, transform):
         return False
 
+    def to_local(self, other):
+        raise NotImplementedError()
+
+    def to_world(self, other):
+        raise NotImplementedError()
+
 
 class ObjectLocalTransformResult(TransformResult):
     def __init__(self, transform):
@@ -141,8 +147,14 @@ class ObjectLocalTransformResult(TransformResult):
     def matrix(self):
         return LocalMatrixAttributeResult(self.transform)
 
+    def is_world_transform_of(self, transform):
+        return (
+            not self.transform.getParent()
+            and self.transform == transform
+        )
+
     def to_world(self, other):
-        if other.is_world_transform_of(self.transform.parent()):
+        if other.is_world_transform_of(self.transform.getParent()):
             return ObjectWorldTransformResult(self.transform)
         raise NotImplementedError
 
@@ -168,6 +180,12 @@ class MatrixTransformResult(object):
     def assign_transform(self, transform):
         self._decompose().assign_transform(transform)
 
+    def to_local(self, other):
+        raise NotImplementedError()
+
+    def to_world(self, other):
+        raise NotImplementedError()
+
     def _decompose(self):
         if self._decompose_result is None:
             pm.loadPlugin("matrixNodes", quiet=True)
@@ -190,12 +208,13 @@ class ObjectWorldTransformResult(MatrixTransformResult):
         rotate_order = rotate_order or AttributeResult(transform.rotateOrder)
         matrix = WorldMatrixAttributeResult(transform)
         super(ObjectWorldTransformResult, self).__init__(matrix, rotate_order)
-    
+        self.transform = transform
+
     def is_world_transform_of(self, transform):
         return self.transform == transform
 
     def to_local(self, other):
-        if other.is_world_transform_of(self.transform.parent()):
+        if other.is_world_transform_of(self.transform.getParent()):
             return ObjectLocalTransformResult(self.transform)
         raise NotImplementedError
 
